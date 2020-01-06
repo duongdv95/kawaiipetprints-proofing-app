@@ -16,8 +16,8 @@ if(dev) {
     app.prepare().then(() => {
         server.get('/', (req, res) => app.render(req, res, '/'))
         server.get('/breed/:id', (req, res) => app.render(req, res, '/breed', {id: req.params.id}))
-        server.get('/order', (req, res) => app.render(req, res, '/order'))
-        server.get('/api/checkorders', async (req, res) => {
+        server.get('/customer', (req, res) => app.render(req, res, '/customer'))
+        server.get('/api/logincustomer', async (req, res) => {
             const { email, order_number } = req.query
             const { data } = await axios.get(
                 `https://${SHOPIFYAPIKEY}:${SHOPIFYPASSWORD}@kawaiipetprints.myshopify.com//admin/api/2019-10/orders.json?updated_at_min=2005-07-31T15:57:11-04:00`
@@ -31,7 +31,7 @@ if(dev) {
                 }
             })
             if(foundLoginPairs.length > 0) {
-                res.status(200).json({ success: true, message: "Redirecting..."}) 
+                res.status(200).json({ success: true, message: "Redirecting...", email, order_number}) 
             } else {
                 res.status(400).json({ success: false, message: "Order doesn't exist!"}) 
             }
@@ -58,7 +58,26 @@ if(!dev) {
     //   });
     server.get('/', (req, res) => app.render(req, res, '/'))
     server.get('/breed/:id', (req, res) => app.render(req, res, '/breed', {id: req.params.id}))
-    server.get('/dogs', (req, res) => app.render(req, res, '/dogs'))
+    server.get('/customer', (req, res) => app.render(req, res, '/customer'))
+    server.get('/api/logincustomer', async (req, res) => {
+        const { email, order_number } = req.query
+        const { data } = await axios.get(
+            `https://${SHOPIFYAPIKEY}:${SHOPIFYPASSWORD}@kawaiipetprints.myshopify.com//admin/api/2019-10/orders.json?updated_at_min=2005-07-31T15:57:11-04:00`
+        )
+        const loginPairsArray = data.orders.map(function(element) {
+            return {email: element.email, orderNumber: element.order_number}
+        })
+        const foundLoginPairs = loginPairsArray.filter(function(loginPair) {
+            if(loginPair.email == email && loginPair.orderNumber == order_number) {
+                return loginPair
+            }
+        })
+        if(foundLoginPairs.length > 0) {
+            res.status(200).json({ success: true, message: "Redirecting...", email, order_number}) 
+        } else {
+            res.status(400).json({ success: false, message: "Order doesn't exist!"}) 
+        }
+    })
     server.get('*', (req, res) => handle(req, res))
 
     module.exports = server

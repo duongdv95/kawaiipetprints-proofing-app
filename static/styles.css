@@ -1,0 +1,24 @@
+.container {
+    padding: 40px;
+  }
+  
+.slick-slide img {
+  width: 100%
+}
+
+.slick-dots li button::before {
+  font-size: 12px !important;
+}
+
+.slick-arrow::before {
+  color: black !important;
+  font-size: 25px;
+}
+
+/* .slick-next:before {
+  color: black !important;
+}
+
+.slick-prev:before {
+  color: black !important;
+} */
