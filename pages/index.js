@@ -12,9 +12,10 @@ class IndexPage extends React.Component {
     this.state = {
       loading: true,
       dog: {},
-      orderNumber: "",
+      order_id: "",
+      loginOrderStatus: "",
       email: "",
-      loginOrderStatus: ""
+      orderNumber: ""
     }
     this.fetchData = this.fetchData.bind(this)
   }
@@ -26,9 +27,10 @@ class IndexPage extends React.Component {
   async loginCustomer() {
     const { data } = await axios.get(
       `/api/logincustomer?email=${this.state.email}&order_number=${this.state.orderNumber}`
-    )
+    , { validateStatus: false})
     this.setState({
-      loginOrderStatus: data
+      loginOrderStatus: data,
+      order_id: data.order_id
     })
     return data
   }
@@ -61,13 +63,11 @@ class IndexPage extends React.Component {
   async handleSubmit(event) {
     event.preventDefault()
     const eventType = event.target.name
-    let href
     switch (eventType) {
       case "loginsubmit":
-        const { success, email, order_number } = await this.loginCustomer()
-        console.log(success)
+        const { success } = await this.loginCustomer()
         if(success) {
-          Router.push(`/customer?order_number=${order_number}&email=${email}`)
+          Router.push(`/customer?order_id=${this.state.order_id}`)
         }
         break
 

@@ -1,6 +1,7 @@
-import React, { useState } from 'react'
+import React from 'react'
 import Header from '../components/header.js'
 import Slider from "react-slick"
+import axios from 'axios'
 
 const meta = { title: 'Order Dashboard', description: 'Order Dashboard' }
 
@@ -10,9 +11,9 @@ function SimpleSlider(props) {
     dots: true,
     speed: 200 //milliseconds
   }
-  const carousel = backgroundsArray.map(function(element) {
+  const carousel = backgroundsArray.map(function(element, index) {
     return (
-      <div>
+      <div key={index}>
         <img src={element} ></img>
       </div>
     )
@@ -49,22 +50,29 @@ function History() {
   )
 }
 
-function BackgroundSelection(props) {
+function OrderProof(props) {
   const { backgroundCategories, currentBackground, backgroundsArray } = props
   return(
     <div>
       <h1>Your Order Proof</h1>
+      <a href="/">
+        Order Status
+      </a>
       <div>
-        Please review your order proof and either approve it or request any changes by leaving a comment below
-      </div>
-      <div>
-        <h3>Browse Background Styles</h3>
-        <div style={{fontWeight: "bold", display: "flex", justifyContent: "space-evenly"}}>
+        <button>Request Revision</button><button>Select Background</button>
+        {/* <div style={{fontWeight: "bold", display: "flex", justifyContent: "space-evenly"}}>
           <button onClick={props.handleSubmit} name="category-prev" type="submit">Prev</button>
           <span>{backgroundCategories[currentBackground]}</span>
           <button onClick={props.handleSubmit} name="category-next" type="submit">Next</button>
+          </div>
+        <SimpleSlider backgroundsArray={backgroundsArray}/> */}
+        <div id="wrapper">
+          <img src="/static/pattern1.png" id="bg-image"></img>
+          <div id="other-images">
+            <img src="/static/dog.png" />
+          </div>
         </div>
-        <SimpleSlider backgroundsArray={backgroundsArray}/>
+        <button>Back</button><button>Approve</button>
         <div>
           <label style={{fontWeight: "bold"}}>Orientation</label>
           <input type="radio" checked/><label>Horizontal</label>
@@ -76,6 +84,10 @@ function BackgroundSelection(props) {
 }
 
 class Customer extends React.Component {
+  static getInitialProps ({ query }) {
+    let props = {order_id: query.order_id}
+    return props
+  }
   constructor (props) {
     super(props)
     // this.handleChange = this.handleChange.bind(this)
@@ -93,13 +105,29 @@ class Customer extends React.Component {
         ["/static/food2.png"],
         ["/static/food2.png"],
         ["/static/food2.png"]
-      ]
+      ],
+      orderInfo: {},
+      totalOrders: 1
     }
     
     // this.fetchData = this.fetchData.bind(this)
   }
   async componentDidMount () {
-    // await this.fetchData()
+    await this.getOrderInfo()
+  }
+
+  async getOrderInfo() {
+    const { data } = await axios.get(
+      `/api/getorder?order_id=${this.props.order_id}`
+    )
+    const totalOrders = data.orderData.orderDataArray.reduce(function(accumulator, currentValue) {
+      return accumulator + currentValue.quantity
+    }, 0)
+
+    this.setState({
+      orderInfo: data,
+      totalOrders
+    })
   }
 
   renderDogList () {
@@ -139,23 +167,18 @@ class Customer extends React.Component {
           <a href="/">
             <img src="/static/logo.png" alt='' width="200px" />
           </a>
-          <nav>
-            <a href="/">
-              Order Status
-            </a>
-          </nav>
-          <BackgroundSelection 
+          <OrderProof 
             backgroundCategories={this.state.backgroundCategories} 
             currentBackground={this.state.currentBackground}
             backgroundsArray={this.state.backgroundsArray[this.state.currentBackground]}
             handleSubmit={this.handleSubmit}
           />
-          <form>
+          {/* <form>
             <label>Your comments (optional)</label>
             <textarea style={{ display:"block" }}/>
-            <input name="approve" type="submit" value="Approve"/>
             <input name="request-change" type="submit" value="Request Change"/>
-          </form>
+            <input name="approve" type="submit" value="Approve"/>
+          </form> */}
           <History/>
         </div>
       </div>

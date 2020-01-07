@@ -22,3 +22,24 @@
 .slick-prev:before {
   color: black !important;
 } */
+
+#bg-image {
+  max-width: 100%;
+  object-fit: cover;
+  width: auto;
+}
+#wrapper {
+  display: inline-block;
+  position: relative;
+}
+
+#other-images {
+  position: absolute;
+  bottom: 0;
+  text-align: center;
+  width: 100%;
+}
+
+#other-images img {
+  max-width: 68%;
+}
