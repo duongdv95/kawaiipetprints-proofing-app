@@ -7,6 +7,7 @@ const handle  = app.getRequestHandler()
 const server  = express()
 const axios   = require('axios')
 const { SHOPIFYAPIKEY, SHOPIFYPASSWORD } = require("./secrets.json")
+const dynamodbREST = "https://7xd39cjm7g.execute-api.us-east-1.amazonaws.com/production/todos"
 
 if(!dev) {
     server.use('/_next', express.static(path.join(__dirname, '.next')))
@@ -20,6 +21,10 @@ if(dev) {
             const { order_id } = req.query
             app.render(req, res, '/customer', {order_id})
         })
+        server.get('/admin', (req, res) => {
+            app.render(req, res, '/admin')
+        })
+
         server.get('/api/logincustomer', async (req, res) => {
             const { email, order_number } = req.query
             const { data } = await axios.get(
@@ -57,6 +62,64 @@ if(dev) {
             }
         })
 
+        server.get('/admin/api/getorders', async (req, res) => {
+            const ordersResponse = await axios.get(dynamodbREST)
+            const orders = ordersResponse.data
+            res.status(200).json({orders})
+        })
+
+        server.get('/admin/api/pushlatest', async (req, res) => {
+            var successCount = 0
+            var alreadyInDBCount = 0
+            var errCount = 0;
+            var updateResponse = {error:[], alreadyInDB:[], added:[]}
+            const shopifyOrdersResponse = await axios.get(
+                `https://${SHOPIFYAPIKEY}:${SHOPIFYPASSWORD}@kawaiipetprints.myshopify.com//admin/api/2019-10/orders.json?updated_at_min=2005-07-31T15:57:11-04:00`
+            )
+            const shopifyOrdersArray = shopifyOrdersResponse.data
+            const orderProofsResponse = await axios.get(dynamodbREST)
+            const ordersProofsArray = orderProofsResponse.data
+
+            const relevantShopifyOrdersArray = shopifyOrdersArray.orders.map(function(element) {
+                const filteredLineItemsArray = element.line_items.map(function(element) {
+                    const product_name = element.name.replace(/ *\([^)]*\) */g, "")
+                    return {variant_id: element.variant_id, product_name, quantity: element.quantity, sku: element.sku, artworkURL: ""}
+                })
+                return {proof_created: false, email: element.email, order_number: element.order_number, order_id: element.id, order_status_url: element.order_status_url, line_items: filteredLineItemsArray}
+            })
+            const ordersProofsArrayIDs = new Set(ordersProofsArray.map(({order_id}) => order_id))
+            
+            for(let i=0; i<relevantShopifyOrdersArray.length; i++) {
+                let element = relevantShopifyOrdersArray[i]
+                try{
+                    const order_id = function() {
+                        if(typeof element.order_id === "number") {
+                            return JSON.stringify(element.order_id)
+                        }
+                        else if(typeof element.order_id === "string") {
+                            return element.order_id
+                        }
+                    }()
+                    if(!ordersProofsArrayIDs.has(order_id)) {
+                        const response = await axios.post(dynamodbREST, {order_id, text: "123", proof_created: element.proof_created, email: element.email, order_number: element.order_number, order_status_url: element.order_status_url, line_items: JSON.stringify(element.line_items)})
+                        if(response.status === 200) {
+                            successCount++
+                            updateResponse.added.push(`${order_id} has been added to the database.`)
+                        }
+                    } else {
+                        alreadyInDBCount++
+                        updateResponse.alreadyInDB.push(`Order ID - ${order_id} is already in the database.`)
+                    }
+                } catch (error) {
+                    errCount++
+                    const { order_id } = JSON.parse(error.response.config.data)
+                    updateResponse.error.push(`Order ID - ${order_id} could not be added to database. => ${error.response.data}`)
+                }
+            }
+
+            res.status(200).json({successCount, alreadyInDBCount, errCount, updateResponse})
+        })
+
         server.get('*', (req, res) => {
             return handle(req, res)
         })
@@ -81,3 +144,4 @@ if(!dev) {
 
     module.exports = server
 }
+
