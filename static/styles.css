@@ -43,3 +43,19 @@
 #other-images img {
   max-width: 68%;
 }
+
+.item {
+  border-top: 1px solid black;
+}
+
+#order-table {
+  display:grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  border-bottom: 1px solid black;
+  border-right: 1px solid black;
+  border-left: 1px solid black;
+}
+
+.header {
+  font-weight: bold;
+}
