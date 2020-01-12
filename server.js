@@ -85,10 +85,9 @@ if(dev) {
                     const product_name = element.name.replace(/ *\([^)]*\) */g, "")
                     return {variant_id: element.variant_id, product_name, quantity: element.quantity, sku: element.sku, artworkURL: ""}
                 })
-                return {proof_created: false, email: element.email, order_number: element.order_number, order_id: element.id, order_status_url: element.order_status_url, line_items: filteredLineItemsArray}
+                return {proof_created: false, email: element.email, order_number: element.order_number, order_id: element.id, order_status_url: element.order_status_url, line_items: filteredLineItemsArray, created_at: element.created_at, updated_at: element.updated_at}
             })
             const ordersProofsArrayIDs = new Set(ordersProofsArray.map(({order_id}) => order_id))
-            
             for(let i=0; i<relevantShopifyOrdersArray.length; i++) {
                 let element = relevantShopifyOrdersArray[i]
                 try{
@@ -101,7 +100,7 @@ if(dev) {
                         }
                     }()
                     if(!ordersProofsArrayIDs.has(order_id)) {
-                        const response = await axios.post(dynamodbREST, {order_id, text: "123", proof_created: element.proof_created, email: element.email, order_number: element.order_number, order_status_url: element.order_status_url, line_items: JSON.stringify(element.line_items)})
+                        const response = await axios.post(dynamodbREST, {order_id, text: "123", proof_created: element.proof_created, email: element.email, order_number: element.order_number, order_status_url: element.order_status_url, line_items: JSON.stringify(element.line_items), created_at: element.created_at, updated_at: element.updated_at})
                         if(response.status === 200) {
                             successCount++
                             updateResponse.added.push(`${order_id} has been added to the database.`)
