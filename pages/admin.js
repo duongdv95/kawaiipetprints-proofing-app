@@ -2,6 +2,8 @@ import React, { useState } from 'react'
 import Modal from 'react-modal';
 import Header from '../components/header.js'
 import axios from 'axios'
+var moment = require('moment');
+moment().format();
 Modal.setAppElement("#__next")
 
 const meta = { title: 'Order Dashboard', description: 'Order Dashboard' }
@@ -24,7 +26,7 @@ class Admin extends React.Component {
     this.handleSubmit = this.handleSubmit.bind(this)
     this.state = {
       loading: true,
-      orderData: {},
+      orderData: [],
       modalIsOpen: false
     }
 
@@ -80,6 +82,31 @@ class Admin extends React.Component {
   }
 
   render () {
+    const orderData = [...this.state.orderData]
+    orderData.sort(function(a, b) {
+      return moment(b.created_at).format("X") - moment(a.created_at).format("X") 
+    })
+    const orderArrayMap = orderData.map((element) => {
+      const proofStatus = (element.proof_created) ? "Art Uploaded!" : "Awaiting Art Upload"
+      const created_at = moment(element.created_at).format("dddd, MMMM Do YYYY, h:mm a")
+      return (
+        <React.Fragment key={element.order_number}>
+          <div className="item" style={{ backgroundColor: "red", color: "white" }}>
+            {proofStatus}
+          </div>
+          <div className="item">
+            <button onClick={this.openModal}>Upload</button>
+          </div>
+          <div className="item">
+            {element.order_number}
+          </div>
+          <div className="item">
+            {created_at}
+          </div>
+        </React.Fragment>
+      )
+    })
+
     return (
       <div>
         <Header meta={meta}>
@@ -99,18 +126,7 @@ class Admin extends React.Component {
             <div className="item header">
               Date
             </div>
-            <div className="item" style={{backgroundColor: "red", color: "white"}}>
-              Awaiting Art Upload
-            </div>
-            <div className="item">
-              <button onClick={this.openModal}>Upload</button>
-            </div>
-            <div className="item">
-              1001
-            </div>
-            <div className="item">
-              1/10/20
-            </div>
+            {orderArrayMap}
         </div>
         <Modal
           isOpen={this.state.modalIsOpen}
