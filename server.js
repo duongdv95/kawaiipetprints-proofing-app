@@ -87,7 +87,7 @@ if(dev) {
                 })
                 return {proof_created: false, email: element.email, order_number: element.order_number, order_id: element.id, order_status_url: element.order_status_url, line_items: filteredLineItemsArray, created_at: element.created_at, updated_at: element.updated_at}
             })
-            const ordersProofsArrayIDs = new Set(ordersProofsArray.map(({order_id}) => order_id))
+            const dynamodbIDArrays = new Set(ordersProofsArray.map(({order_id}) => order_id))
             for(let i=0; i<relevantShopifyOrdersArray.length; i++) {
                 let element = relevantShopifyOrdersArray[i]
                 try{
@@ -99,7 +99,8 @@ if(dev) {
                             return element.order_id
                         }
                     }()
-                    if(!ordersProofsArrayIDs.has(order_id)) {
+                    // iterate through shopify orders (4 items) check if each other items exist in dynamodb already (5 items)
+                    if(!dynamodbIDArrays.has(order_id)) {
                         const response = await axios.post(dynamodbREST, {order_id, text: "123", proof_created: element.proof_created, email: element.email, order_number: element.order_number, order_status_url: element.order_status_url, line_items: JSON.stringify(element.line_items), created_at: element.created_at, updated_at: element.updated_at})
                         if(response.status === 200) {
                             successCount++
@@ -116,7 +117,35 @@ if(dev) {
                 }
             }
 
-            res.status(200).json({successCount, alreadyInDBCount, errCount, updateResponse})
+            res.status(200).json({success: true, successCount, alreadyInDBCount, errCount, updateResponse})
+        })
+
+        server.delete('/admin/api/deleteorder/:id', async (req, res) => {
+            const order_id = req.params.id
+            try{
+                const response = await axios.delete(dynamodbREST + `/${order_id}`, {auth: {username: "test", password: "secret"}})
+                res.status(200).json({success: true, message: `Order ID ${order_id} successfully deleted.`, data: response.data})
+            } catch (error) {
+                res.status(200).json({success: false, message: `Order ID ${order_id} failed to delete`, data: error.response.data})
+            }
+        })
+
+        server.put('/admin/api/archiveorder/:id', async (req, res) => {
+            const order_id = req.params.id
+            try{
+                const shopifyResponse = await axios.get(
+                    `https://${SHOPIFYAPIKEY}:${SHOPIFYPASSWORD}@kawaiipetprints.myshopify.com/admin/api/2019-10/orders/${order_id}.json`
+                )
+                const fulfilled = (shopifyResponse.data.order.fulfillment_status === "fulfilled") ? true : false
+                const response = await axios.put(dynamodbREST + `/${order_id}`, {fulfilled})
+                if(response.data.fulfilled) {
+                    res.status(200).json({success: true, message: `Order ID ${order_id} successfully archived.`, data: response.data})
+                } else {
+                    res.status(400).json({success: false, message: `Failed to archive Order ID ${order_id}. Please wait until order is fulfilled.`, data: response.data})
+                }
+            } catch (error) {
+                res.status(200).json({success: false, message: `Order ID ${order_id} failed to be archived.`, data: error.response.data})
+            }
         })
 
         server.get('*', (req, res) => {

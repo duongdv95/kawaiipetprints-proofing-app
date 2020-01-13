@@ -36,13 +36,21 @@ class Admin extends React.Component {
     // this.fetchData = this.fetchData.bind(this)
   }
   async componentDidMount () {
-    await this.getOrders()
+    await this.getLatestOrders()
+  }
+
+  async getLatestOrders() {
+    const { data } = await axios.get('/admin/api/pushlatest')
+    if(data.success) {
+      this.getOrders()
+    }
   }
 
   async getOrders() {
     const { data } = await axios.get(`/admin/api/getorders`)
     this.setState({orderData: data.orders})
   }
+
   openModal() {
     this.setState({modalIsOpen: true});
   }
@@ -55,6 +63,21 @@ class Admin extends React.Component {
   closeModal() {
     this.setState({modalIsOpen: false});
   }
+
+  async deleteOrder(order_number) {
+    const { data } = await axios.delete(`/admin/api/deleteorder/${order_number}`)
+    if(data.success){
+      this.getOrders()
+    }
+  }
+
+  async archiveOrder(order_number) {
+    const { data } = await axios.put(`/admin/api/archiveorder/${order_number}`)
+    if(data.success){
+      this.getOrders()
+    }
+  }
+
   handleChange(event) {
     event.preventDefault()
     const eventType = event.target.name
@@ -103,6 +126,14 @@ class Admin extends React.Component {
           <div className="item">
             {created_at}
           </div>
+          <div className="item">
+            <button>
+              Edit
+            </button>
+            <button onClick={() => this.archiveOrder(element.order_id)}>
+              Archive
+            </button>
+          </div>
         </React.Fragment>
       )
     })
@@ -125,6 +156,9 @@ class Admin extends React.Component {
             </div>
             <div className="item header">
               Date
+            </div>
+            <div className="item header">
+              Action
             </div>
             {orderArrayMap}
         </div>
