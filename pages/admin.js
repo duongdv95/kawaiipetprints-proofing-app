@@ -19,6 +19,56 @@ const customStyles = {
   }
 };
 
+function OrdersTable(props) {
+  const { orderData, archiveOrder, openModal } = props
+  const orderMap = orderData.map((element) => {
+    const proofStatus = (element.proof_created) ? "Art Uploaded!" : "Awaiting Art Upload"
+    const created_at = moment(element.created_at).format("dddd, MMMM Do YYYY, h:mm a")
+    return (
+      <React.Fragment key={element.order_number}>
+        <div className="item" style={{ backgroundColor: "red", color: "white" }}>
+          {proofStatus}
+        </div>
+        <div className="item">
+          <button onClick={() => openModal(element.order_id)}>Upload</button>
+        </div>
+        <div className="item">
+          {element.order_number}
+        </div>
+        <div className="item">
+          {created_at}
+        </div>
+        <div className="item">
+          <button onClick={() => archiveOrder(element.order_id)}>
+            Archive
+          </button>
+        </div>
+      </React.Fragment>
+    )
+  })
+
+  return(
+    <div id="order-table" >
+      <div className="item header">
+        Proof Status
+      </div>
+      <div className="item header">
+        Upload Art
+      </div>
+      <div className="item header">
+        Order Number
+      </div>
+      <div className="item header">
+        Date
+      </div>
+      <div className="item header">
+        Action
+      </div>
+      {orderMap}
+    </div>
+  )
+}
+
 class Admin extends React.Component {
   constructor (props) {
     super(props)
@@ -27,12 +77,15 @@ class Admin extends React.Component {
     this.state = {
       loading: true,
       orderData: [],
-      modalIsOpen: false
+      archivedOrderData: [],
+      modalIsOpen: false,
+      currentOrderID: ""
     }
 
     this.openModal = this.openModal.bind(this);
     this.afterOpenModal = this.afterOpenModal.bind(this);
     this.closeModal = this.closeModal.bind(this);
+    this.archiveOrder = this.archiveOrder.bind(this);
     // this.fetchData = this.fetchData.bind(this)
   }
   async componentDidMount () {
@@ -48,16 +101,27 @@ class Admin extends React.Component {
 
   async getOrders() {
     const { data } = await axios.get(`/admin/api/getorders`)
-    this.setState({orderData: data.orders})
+    const allOrdersArray = [...data.orders.map((element) => {
+      return {created_at: element.created_at, email: element.email, fulfilled: element.fulfilled, line_items: JSON.parse(element.line_items), order_id: element.order_id, order_number: element.order_number, order_status_url: element.order_status_url, proof_created: element.proof_created, updated_at: element.updated_at}
+    })]
+    allOrdersArray.sort(function(a, b) {
+      return moment(b.created_at).format("X") - moment(a.created_at).format("X") 
+    })
+    const orderData = allOrdersArray.filter((element) => {
+      return element.fulfilled === false
+    })
+    const archivedOrderData = allOrdersArray.filter((element) => {
+      return element.fulfilled === true
+    })
+    this.setState({orderData, archivedOrderData})
   }
 
-  openModal() {
-    this.setState({modalIsOpen: true});
+  openModal(order_id) {
+    this.setState({currentOrderID: order_id, modalIsOpen: true});
   }
  
   afterOpenModal() {
-    // references are now sync'd and can be accessed.
-    this.subtitle.style.color = '#f00';
+
   }
  
   closeModal() {
@@ -105,38 +169,29 @@ class Admin extends React.Component {
   }
 
   render () {
-    const orderData = [...this.state.orderData]
-    orderData.sort(function(a, b) {
-      return moment(b.created_at).format("X") - moment(a.created_at).format("X") 
-    })
-    const orderArrayMap = orderData.map((element) => {
-      const proofStatus = (element.proof_created) ? "Art Uploaded!" : "Awaiting Art Upload"
-      const created_at = moment(element.created_at).format("dddd, MMMM Do YYYY, h:mm a")
+    const modalOrderData = (currentOrderID) => {
+      if(!currentOrderID) return (null)
+      const { orderData, archivedOrderData } = this.state
+      const selectedOrder = [...orderData, ...archivedOrderData].filter((element) => element.order_id === currentOrderID)[0]
+      const line_items = selectedOrder.line_items
+      const artUpload = line_items.map(function(element, index) {
+        return (
+          <div key={index}>
+            <label>{element.product_name}</label>
+            <input type="file" accept="image/png, image/jpeg"/>
+          </div>
+        )
+      })
       return (
-        <React.Fragment key={element.order_number}>
-          <div className="item" style={{ backgroundColor: "red", color: "white" }}>
-            {proofStatus}
-          </div>
-          <div className="item">
-            <button onClick={this.openModal}>Upload</button>
-          </div>
-          <div className="item">
-            {element.order_number}
-          </div>
-          <div className="item">
-            {created_at}
-          </div>
-          <div className="item">
-            <button>
-              Edit
-            </button>
-            <button onClick={() => this.archiveOrder(element.order_id)}>
-              Archive
-            </button>
+        <React.Fragment>
+          <h2>Order {selectedOrder.order_number}</h2>
+          {artUpload}
+          <div>
+            <button onClick={this.closeModal}>close</button>
           </div>
         </React.Fragment>
       )
-    })
+    }
 
     return (
       <div>
@@ -144,24 +199,18 @@ class Admin extends React.Component {
         </Header>
         <div style={{ padding: "0 1em"}}>
         <img src="/static/logo.png" alt='' width="200px" />
-        <div id="order-table" >
-            <div className="item header">
-              Proof Status
-            </div>
-            <div className="item header">
-              Upload Art
-            </div>
-            <div className="item header">
-              Order Number
-            </div>
-            <div className="item header">
-              Date
-            </div>
-            <div className="item header">
-              Action
-            </div>
-            {orderArrayMap}
-        </div>
+        <h1>Orders</h1>
+        <OrdersTable 
+        orderData={this.state.orderData}
+        openModal={this.openModal}
+        archiveOrder={this.archiveOrder}
+        />
+        <h1>Archived Orders</h1>
+        <OrdersTable 
+        orderData={this.state.archivedOrderData}
+        openModal={this.openModal}
+        archiveOrder={this.archiveOrder}
+        />
         <Modal
           isOpen={this.state.modalIsOpen}
           onAfterOpen={this.afterOpenModal}
@@ -169,17 +218,7 @@ class Admin extends React.Component {
           style={customStyles}
           contentLabel="Example Modal"
         >
-
-          <h2 ref={subtitle => this.subtitle = subtitle}>Hello</h2>
-          <button onClick={this.closeModal}>close</button>
-          <div>I am a modal</div>
-          <form>
-            <input />
-            <button>tab navigation</button>
-            <button>stays</button>
-            <button>inside</button>
-            <button>the modal</button>
-          </form>
+          {modalOrderData(this.state.currentOrderID)}
         </Modal>
         </div>
       </div>
