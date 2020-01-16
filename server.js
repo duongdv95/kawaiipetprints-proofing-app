@@ -8,7 +8,9 @@ const server  = express()
 const axios   = require('axios')
 const { SHOPIFYAPIKEY, SHOPIFYPASSWORD } = require("./secrets.json")
 const dynamodbREST = "https://7xd39cjm7g.execute-api.us-east-1.amazonaws.com/production/todos"
-
+const { upload, deleteImages }          = require("./file-upload")
+const proofUpload      = upload.single("image")
+const { cloudFront }   = require('./awsconfig.js')
 if(!dev) {
     server.use('/_next', express.static(path.join(__dirname, '.next')))
 }
@@ -118,6 +120,37 @@ if(dev) {
             }
 
             res.status(200).json({success: true, successCount, alreadyInDBCount, errCount, updateResponse})
+        })
+
+        server.post("/admin/api/image-upload", function (req, res) {
+            proofUpload(req, res, async function (err) {
+                if (err) {
+                    return res.status(422).send({ success: false, errors: [{ title: 'File Upload Error', detail: err.message }] });
+                }
+                const imageKey = req.file.key
+                const imageURL = `${cloudFront}${imageKey}`
+                const order_id = req.body.order_id
+                console.log(imageURL)
+                // const { data } = await axios.get(`${dynamodbREST}/${order_id}`)
+                // const line_items = JSON.parse(data.line_items)
+                // try{
+                //     const response = await axios.put(dynamodbREST + `/${order_id}`, {fulfilled})
+                //     if(response.data.fulfilled) {
+                //         res.status(200).json({success: true, message: `Order ID ${order_id} successfully archived.`, data: response.data})
+                //     } else {
+                //         res.status(400).json({success: false, message: `Failed to archive Order ID ${order_id}. Please wait until order is fulfilled.`, data: response.data})
+                //     }
+                // } catch (error) {
+                //     res.status(200).json({success: false, message: `Order ID ${order_id} failed to be archived.`, data: error.response.data})
+                // }
+                // const response = await store.addImagesToFixture({ url_id, imagesArray })
+                // if (!response.success) {
+                //     keyArray.forEach((element) => {
+                //         deleteImages({ key: element })
+                //     })
+                // }
+                return res.json({ success: true });
+            });
         })
 
         server.delete('/admin/api/deleteorder/:id', async (req, res) => {

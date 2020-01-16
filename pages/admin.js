@@ -10,7 +10,7 @@ const meta = { title: 'Order Dashboard', description: 'Order Dashboard' }
 
 const customStyles = {
   content : {
-    top                   : '50%',
+    top                   : '25%',
     left                  : '50%',
     right                 : 'auto',
     bottom                : 'auto',
@@ -183,13 +183,19 @@ class Admin extends React.Component {
         )
       })
       return (
-        <React.Fragment>
+        <div style={{display: "grid"}}>
           <h2>Order {selectedOrder.order_number}</h2>
+          <div>
+            <span style={{fontWeight: "bold"}}>Email</span> {selectedOrder.email}
+          </div>
+          <div>
+            <span style={{fontWeight: "bold"}}>Order Status</span> <a href={selectedOrder.order_status_url}>View Order</a>
+          </div>
           {artUpload}
           <div>
             <button onClick={this.closeModal}>close</button>
           </div>
-        </React.Fragment>
+        </div>
       )
     }
 
