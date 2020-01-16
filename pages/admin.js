@@ -102,7 +102,7 @@ class Admin extends React.Component {
   async getOrders() {
     const { data } = await axios.get(`/admin/api/getorders`)
     const allOrdersArray = [...data.orders.map((element) => {
-      return {created_at: element.created_at, email: element.email, fulfilled: element.fulfilled, line_items: JSON.parse(element.line_items), order_id: element.order_id, order_number: element.order_number, order_status_url: element.order_status_url, proof_created: element.proof_created, updated_at: element.updated_at}
+      return {created_at: element.created_at, email: element.email, fulfilled: element.fulfilled, line_items: element.line_items, order_id: element.order_id, order_number: element.order_number, order_status_url: element.order_status_url, proof_created: element.proof_created, updated_at: element.updated_at}
     })]
     allOrdersArray.sort(function(a, b) {
       return moment(b.created_at).format("X") - moment(a.created_at).format("X") 

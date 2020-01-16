@@ -24,7 +24,6 @@ const upload = multer({
             cb(null, { fieldName: 'TESTING_META_DATA!' });
         },
         key: function (req, file, cb) {
-            console.log(req.body)
             cb(null, `order_number=${req.body.order_number}&order_id=${req.body.order_id}&variant_id=${req.body.variant_id}&date=${Date.now().toString()}.png`)
         }
     })

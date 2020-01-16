@@ -85,7 +85,7 @@ if(dev) {
             const relevantShopifyOrdersArray = shopifyOrdersArray.orders.map(function(element) {
                 const filteredLineItemsArray = element.line_items.map(function(element) {
                     const product_name = element.name.replace(/ *\([^)]*\) */g, "")
-                    return {variant_id: element.variant_id, product_name, quantity: element.quantity, sku: element.sku, artworkURL: ""}
+                    return {variant_id: element.variant_id, product_name, quantity: element.quantity, sku: element.sku, artworkURL: "temp"}
                 })
                 return {proof_created: false, email: element.email, order_number: element.order_number, order_id: element.id, order_status_url: element.order_status_url, line_items: filteredLineItemsArray, created_at: element.created_at, updated_at: element.updated_at}
             })
@@ -103,7 +103,7 @@ if(dev) {
                     }()
                     // iterate through shopify orders (4 items) check if each other items exist in dynamodb already (5 items)
                     if(!dynamodbIDArrays.has(order_id)) {
-                        const response = await axios.post(dynamodbREST, {order_id, text: "123", proof_created: element.proof_created, email: element.email, order_number: element.order_number, order_status_url: element.order_status_url, line_items: JSON.stringify(element.line_items), created_at: element.created_at, updated_at: element.updated_at})
+                        const response = await axios.post(dynamodbREST, {order_id, text: "123", proof_created: element.proof_created, email: element.email, order_number: element.order_number, order_status_url: element.order_status_url, line_items: element.line_items, created_at: element.created_at, updated_at: element.updated_at})
                         if(response.status === 200) {
                             successCount++
                             updateResponse.added.push(`${order_id} has been added to the database.`)
@@ -130,26 +130,21 @@ if(dev) {
                 const imageKey = req.file.key
                 const imageURL = `${cloudFront}${imageKey}`
                 const order_id = req.body.order_id
-                console.log(imageURL)
-                // const { data } = await axios.get(`${dynamodbREST}/${order_id}`)
-                // const line_items = JSON.parse(data.line_items)
-                // try{
-                //     const response = await axios.put(dynamodbREST + `/${order_id}`, {fulfilled})
-                //     if(response.data.fulfilled) {
-                //         res.status(200).json({success: true, message: `Order ID ${order_id} successfully archived.`, data: response.data})
-                //     } else {
-                //         res.status(400).json({success: false, message: `Failed to archive Order ID ${order_id}. Please wait until order is fulfilled.`, data: response.data})
-                //     }
-                // } catch (error) {
-                //     res.status(200).json({success: false, message: `Order ID ${order_id} failed to be archived.`, data: error.response.data})
-                // }
-                // const response = await store.addImagesToFixture({ url_id, imagesArray })
-                // if (!response.success) {
-                //     keyArray.forEach((element) => {
-                //         deleteImages({ key: element })
-                //     })
-                // }
-                return res.json({ success: true });
+                const imageIndex = parseInt(req.body.index)
+                const response = await axios.get(`${dynamodbREST}/${order_id}`, {auth: {username: "test", password: "secret"}, validateStatus: false})
+                if(response.status === 200) {
+                    const line_items = response.data.line_items
+                    line_items[imageIndex].artworkURL = imageURL
+                    const updateResponse = await axios.put(dynamodbREST + `/${order_id}`, {line_items}, {validateStatus: false})
+                    if(updateResponse.status === 200) {
+                        res.status(200).json({success: true, message: `Image successfully uploaded.`, data: updateResponse.data})
+                    } else {
+                        deleteImages({ key: imageKey })
+                        res.status(400).json({success: false, message: `Image failed to upload.`, data: updateResponse.data})
+                    }
+                } else {
+                    res.status(400).json({success: false, message: `Failed to retrieve order ${order_id}.`, data: response.data})
+                }
             });
         })
 
