@@ -6,11 +6,14 @@ const app     = next({ dev })
 const handle  = app.getRequestHandler()
 const server  = express()
 const axios   = require('axios')
+const bodyParser = require('body-parser')
 const { SHOPIFYAPIKEY, SHOPIFYPASSWORD } = require("./secrets.json")
 const dynamodbREST = "https://7xd39cjm7g.execute-api.us-east-1.amazonaws.com/production/todos"
 const { upload, deleteImages }          = require("./file-upload")
 const proofUpload      = upload.single("image")
 const { cloudFront }   = require('./awsconfig.js')
+var jsonParser = bodyParser.json()
+var urlencodedParser = bodyParser.urlencoded({ extended: false })
 if(!dev) {
     server.use('/_next', express.static(path.join(__dirname, '.next')))
 }
@@ -145,7 +148,7 @@ if(dev) {
                 } else {
                     res.status(400).json({success: false, message: `Failed to retrieve order ${order_id}.`, data: response.data})
                 }
-            });
+            })
         })
 
         server.delete('/admin/api/deleteorder/:id', async (req, res) => {
@@ -173,6 +176,34 @@ if(dev) {
                 }
             } catch (error) {
                 res.status(200).json({success: false, message: `Order ID ${order_id} failed to be archived.`, data: error.response.data})
+            }
+        })
+
+        server.put('/admin/api/deleteproof/:id', jsonParser, async (req, res) => {
+            const order_id = req.params.id
+            const { line_items, index } = req.body
+            line_items[index].artworkURL = "temp"
+            function test() {
+                const original_line_items = line_items.slice(0)
+                console.log("a",original_line_items)
+                original_line_items.forEach((element) => {
+                    console.log("b",original_line_items)
+                    let artworkURL = element.artworkURL
+                    let imageKey = artworkURL.replace("https://dwjt46l68k2gz.cloudfront.net/","")
+                    console.log(imageKey)
+                    deleteImages({ key: imageKey })
+                })
+            }
+            try{
+                const response = await axios.put(dynamodbREST + `/${order_id}`, {line_items})
+                if(response.status === 200) {
+                    test()
+                    res.status(200).json({success: true, message: `Order ID ${order_id} proof images updated!`, data: response.data})
+                } else {
+                    res.status(400).json({success: false, message: `Failed to update Order ID ${order_id} proof images.`, data: response.data})
+                }
+            } catch (error) {
+                res.status(200).json({success: false, message: `Order ID ${order_id} proof images failed to update.`, data: error.response.data})
             }
         })
 

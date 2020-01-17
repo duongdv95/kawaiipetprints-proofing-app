@@ -10,7 +10,7 @@ const meta = { title: 'Order Dashboard', description: 'Order Dashboard' }
 
 const customStyles = {
   content : {
-    top                   : '25%',
+    top                   : '40%',
     left                  : '50%',
     right                 : 'auto',
     bottom                : 'auto',
@@ -22,13 +22,18 @@ const customStyles = {
 function OrdersTable(props) {
   const { orderData, archiveOrder, openModal } = props
   const orderMap = orderData.map((element) => {
-    const proofStatus = (element.proof_created) ? "Art Uploaded!" : "Awaiting Art Upload"
+    const proofStatus = (element.proof_created) ? 
+    (<div className="item" style={{ backgroundColor: "green", color: "white" }}>
+        Art Uploaded!
+      </div>) 
+      :
+      (<div className="item" style={{ backgroundColor: "red", color: "white" }}>
+      Awaiting Art Upload
+    </div>) 
     const created_at = moment(element.created_at).format("dddd, MMMM Do YYYY, h:mm a")
     return (
       <React.Fragment key={element.order_number}>
-        <div className="item" style={{ backgroundColor: "red", color: "white" }}>
-          {proofStatus}
-        </div>
+        {proofStatus}
         <div className="item">
           <button onClick={() => openModal(element.order_id)}>Upload</button>
         </div>
@@ -69,23 +74,74 @@ function OrdersTable(props) {
   )
 }
 
+const ModalOrderData = (props) => {
+  const { currentOrderID, deleteProof, orderData, archivedOrderData, closeModal, handleChange, submitProof} = props
+  if(!currentOrderID) return (null)
+  const selectedOrder = [...orderData, ...archivedOrderData].filter((element) => element.order_id === currentOrderID)[0]
+  const line_items = selectedOrder.line_items
+  const artUpload = line_items.map(function(element, index) {
+    let uploadOption = function() {
+      if(element.artworkURL === "temp") {
+        return (
+        <form data-orderid={currentOrderID} data-index={index} data-ordernumber={selectedOrder.order_number} data-variantid={element.variant_id} onSubmit={submitProof}>
+          <div>{element.product_name}</div>
+          <input onChange={handleChange} name="select-image" type="file" accept="image/png, image/jpeg"/>
+          <button type="submit">Submit</button>
+        </form>)
+      } else {
+        return (
+          <div style={{display:"grid"}}>
+            <div>{element.product_name}</div>
+            <a href={element.artworkURL}>Image</a>
+            <button onClick={() => deleteProof({order_id: currentOrderID, index, line_items})}>Delete Image</button>
+          </div>
+        )
+      }
+    }()
+
+    return (
+      <div key={index}>
+        <div style={{fontWeight: "bold"}}>Item - {index + 1}/{line_items.length} | Quantity - {element.quantity}</div>
+        {uploadOption}
+      </div>
+    )
+  })
+  return (
+    <div style={{display: "grid"}}>
+      <h2>Order {selectedOrder.order_number}</h2>
+      <div>
+        <span style={{fontWeight: "bold"}}>Email</span> {selectedOrder.email}
+      </div>
+      <div>
+        <span style={{fontWeight: "bold"}}>Order Status</span> <a href={selectedOrder.order_status_url}>View Order</a>
+      </div>
+      {artUpload}
+      <div style={{display: "grid"}}>
+        <button style={{marginLeft:"auto"}} onClick={closeModal}>close</button>
+      </div>
+    </div>
+  )
+}
+
 class Admin extends React.Component {
   constructor (props) {
     super(props)
-    this.handleChange = this.handleChange.bind(this)
-    this.handleSubmit = this.handleSubmit.bind(this)
     this.state = {
       loading: true,
       orderData: [],
       archivedOrderData: [],
       modalIsOpen: false,
-      currentOrderID: ""
+      currentOrderID: "",
+      primaryImage: null
     }
-
+    
+    this.handleChange = this.handleChange.bind(this)
     this.openModal = this.openModal.bind(this);
     this.afterOpenModal = this.afterOpenModal.bind(this);
     this.closeModal = this.closeModal.bind(this);
     this.archiveOrder = this.archiveOrder.bind(this);
+    this.deleteProof = this.deleteProof.bind(this)
+    this.submitProof = this.submitProof.bind(this)
     // this.fetchData = this.fetchData.bind(this)
   }
   async componentDidMount () {
@@ -128,6 +184,48 @@ class Admin extends React.Component {
     this.setState({modalIsOpen: false});
   }
 
+  async submitProof(event) {
+    event.preventDefault()
+    const { orderid, index, ordernumber, variantid } = event.target.dataset
+    const formData = new FormData()
+    const primaryImage = this.state.primaryImage
+    if (primaryImage) {
+        formData.append("order_id", orderid)
+        formData.append("order_number", ordernumber)
+        formData.append("variant_id", variantid)
+        formData.append("index", index)
+        formData.append("image", primaryImage[0])
+        try {
+            let uploadResponse = await axios.post('/admin/api/image-upload', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            })
+            if (uploadResponse.data.success) {
+                this.setState({uploadMessage: "Upload success! Image(s) saved to S3" })
+                this.getOrders()
+            } else {
+                this.setState({uploadMessage: uploadResponse.data.message})
+            }
+        } catch (err) {
+            this.setState({uploadMessage: `Unauthorized. ${err.response.data.message}`})
+        }
+    } else {
+        this.setState({ uploadMessage: "Primary image required!" })
+    }
+  }
+
+  async deleteProof({order_id, index, line_items}) {
+    console.log(line_items)
+    // const temp = line_items
+    // let original_line_items = [...line_items]
+    // temp[index].artworkURL = "temp"
+    const { data } = await axios.put(`/admin/api/deleteproof/${order_id}`, {line_items, index})
+    if(data.success){
+      this.getOrders()
+    }
+  }
+
   async deleteOrder(order_number) {
     const { data } = await axios.delete(`/admin/api/deleteorder/${order_number}`)
     if(data.success){
@@ -135,8 +233,8 @@ class Admin extends React.Component {
     }
   }
 
-  async archiveOrder(order_number) {
-    const { data } = await axios.put(`/admin/api/archiveorder/${order_number}`)
+  async archiveOrder(order_id) {
+    const { data } = await axios.put(`/admin/api/archiveorder/${order_id}`)
     if(data.success){
       this.getOrders()
     }
@@ -146,21 +244,10 @@ class Admin extends React.Component {
     event.preventDefault()
     const eventType = event.target.name
     switch (eventType) {
-      case "category-prev":
-        
-        break
-
-      default:
-        console.log("error")
-    }
-  }
-
-  handleSubmit(event) {
-    event.preventDefault()
-    const eventType = event.target.name
-    switch (eventType) {
-      case "category-prev":
-        
+      case "select-image":
+        console.log("uploaded!")
+        const primaryImage = event.target.files
+        this.setState({ primaryImage})
         break
 
       default:
@@ -169,36 +256,6 @@ class Admin extends React.Component {
   }
 
   render () {
-    const modalOrderData = (currentOrderID) => {
-      if(!currentOrderID) return (null)
-      const { orderData, archivedOrderData } = this.state
-      const selectedOrder = [...orderData, ...archivedOrderData].filter((element) => element.order_id === currentOrderID)[0]
-      const line_items = selectedOrder.line_items
-      const artUpload = line_items.map(function(element, index) {
-        return (
-          <div key={index}>
-            <label>{element.product_name}</label>
-            <input type="file" accept="image/png, image/jpeg"/>
-          </div>
-        )
-      })
-      return (
-        <div style={{display: "grid"}}>
-          <h2>Order {selectedOrder.order_number}</h2>
-          <div>
-            <span style={{fontWeight: "bold"}}>Email</span> {selectedOrder.email}
-          </div>
-          <div>
-            <span style={{fontWeight: "bold"}}>Order Status</span> <a href={selectedOrder.order_status_url}>View Order</a>
-          </div>
-          {artUpload}
-          <div>
-            <button onClick={this.closeModal}>close</button>
-          </div>
-        </div>
-      )
-    }
-
     return (
       <div>
         <Header meta={meta}>
@@ -224,7 +281,15 @@ class Admin extends React.Component {
           style={customStyles}
           contentLabel="Example Modal"
         >
-          {modalOrderData(this.state.currentOrderID)}
+          <ModalOrderData
+          currentOrderID = {this.state.currentOrderID}
+          deleteProof = {this.deleteProof}
+          orderData = {this.state.orderData}
+          archivedOrderData = {this.state.archivedOrderData}
+          closeModal = {this.closeModal}
+          handleChange = {this.handleChange}
+          submitProof = {this.submitProof}
+          />
         </Modal>
         </div>
       </div>
