@@ -36,7 +36,7 @@ const deleteImages = async ({ key }) => {
     }
     await s3.deleteObject(params, function (err, data) {
         if(!err) {
-            // console.log(data)
+            console.log(data)
         } else {
             console.log(err);
         }

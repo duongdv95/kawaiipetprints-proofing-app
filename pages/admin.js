@@ -157,7 +157,7 @@ class Admin extends React.Component {
 
   async getOrders() {
     const { data } = await axios.get(`/admin/api/getorders`)
-    const allOrdersArray = [...data.orders.map((element) => {
+    const allOrdersArray = [...data.items.map((element) => {
       return {created_at: element.created_at, email: element.email, fulfilled: element.fulfilled, line_items: element.line_items, order_id: element.order_id, order_number: element.order_number, order_status_url: element.order_status_url, proof_created: element.proof_created, updated_at: element.updated_at}
     })]
     allOrdersArray.sort(function(a, b) {
@@ -245,7 +245,6 @@ class Admin extends React.Component {
     const eventType = event.target.name
     switch (eventType) {
       case "select-image":
-        console.log("uploaded!")
         const primaryImage = event.target.files
         this.setState({ primaryImage})
         break
