@@ -79,11 +79,19 @@ const ModalOrderData = (props) => {
   if(!currentOrderID) return (null)
   const selectedOrder = [...orderData, ...archivedOrderData].filter((element) => element.order_id === currentOrderID)[0]
   const line_items = selectedOrder.line_items
+  
   const artUpload = line_items.map(function(element, index) {
     let uploadOption = function() {
       if(element.artworkURL === "temp") {
         return (
-        <form data-orderid={currentOrderID} data-index={index} data-ordernumber={selectedOrder.order_number} data-variantid={element.variant_id} onSubmit={submitProof}>
+        <form 
+        data-orderid={currentOrderID} 
+        data-index={index} 
+        data-ordernumber={selectedOrder.order_number} 
+        data-variantid={element.variant_id} 
+        onSubmit={submitProof}
+        line_items={line_items}
+        >
           <div>{element.product_name}</div>
           <input onChange={handleChange} name="select-image" type="file" accept="image/png, image/jpeg"/>
           <button type="submit">Submit</button>
@@ -186,7 +194,7 @@ class Admin extends React.Component {
 
   async submitProof(event) {
     event.preventDefault()
-    const { orderid, index, ordernumber, variantid } = event.target.dataset
+    const { orderid, index, ordernumber, variantid, line_items } = event.target.dataset
     const formData = new FormData()
     const primaryImage = this.state.primaryImage
     if (primaryImage) {
@@ -194,6 +202,7 @@ class Admin extends React.Component {
         formData.append("order_number", ordernumber)
         formData.append("variant_id", variantid)
         formData.append("index", index)
+        formData.append("line_item", line_items)
         formData.append("image", primaryImage[0])
         try {
             let uploadResponse = await axios.post('/admin/api/image-upload', formData, {
@@ -235,6 +244,7 @@ class Admin extends React.Component {
 
   async archiveOrder(order_id) {
     const { data } = await axios.put(`/admin/api/archiveorder/${order_id}`)
+    console.log(data)
     if(data.success){
       this.getOrders()
     }

@@ -106,7 +106,7 @@ async function addImagesToFixture({ order_id, line_items }) {
 }
 
 async function updateOrder({ order_id, data}) {
-    const {fulfilled, line_items } = data
+    const { fulfilled, line_items } = data
     const params = function () {
         let paramsTemp = {
           TableName: table,
@@ -145,7 +145,9 @@ async function updateOrder({ order_id, data}) {
     if(data.fulfilled && typeof data.fulfilled !== 'boolean') {
         return {success: false, message: `Couldn't update the order item - fulfilled must be true or false.`}
     }
-
+    if(!fulfilled) {
+        return {success: false, message: `Error. Order: ${order_id} is not fulfulilled`}
+    }
     const response = await docClient.update(params).promise()
     if(response.Attributes) {
         return {success: true, message: `Fixture: ${order_id} updated`, order_id}

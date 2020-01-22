@@ -160,47 +160,36 @@ if(dev) {
         //     }
         // })
 
-        // server.put('/admin/api/archiveorder/:id', async (req, res) => {
-        //     const order_id = req.params.id
-        //     try{
-        //         const shopifyResponse = await axios.get(
-        //             `https://${SHOPIFYAPIKEY}:${SHOPIFYPASSWORD}@kawaiipetprints.myshopify.com/admin/api/2019-10/orders/${order_id}.json`
-        //         )
-        //         const fulfilled = (shopifyResponse.data.order.fulfillment_status === "fulfilled") ? true : false
-        //         const response = await axios.put(dynamodbREST + `/${order_id}`, {fulfilled})
-        //         if(response.data.fulfilled) {
-        //             res.status(200).json({success: true, message: `Order ID ${order_id} successfully archived.`, data: response.data})
-        //         } else {
-        //             res.status(400).json({success: false, message: `Failed to archive Order ID ${order_id}. Please wait until order is fulfilled.`, data: response.data})
-        //         }
-        //     } catch (error) {
-        //         res.status(200).json({success: false, message: `Order ID ${order_id} failed to be archived.`, data: error.response.data})
-        //     }
-        // })
+        server.put('/admin/api/archiveorder/:id', async (req, res) => {
+            const order_id = req.params.id
+            const shopifyResponse = await axios.get(
+                `https://${SHOPIFYAPIKEY}:${SHOPIFYPASSWORD}@kawaiipetprints.myshopify.com/admin/api/2019-10/orders/${order_id}.json`
+                )
+            const fulfilled = (shopifyResponse.data.order.fulfillment_status === "fulfilled") ? true : false
+            const response = await dynamodb.updateOrder({ order_id, data: { fulfilled }})
+            if(response.success) {
+                res.status(200).json(response)
+            } else {
+                res.status(400).json(response)
+            }
+        })
 
         server.put('/admin/api/deleteproof/:id', jsonParser, async (req, res) => {
-            try{
-                const order_id = req.params.id
-                const line_items = req.body.line_items
-                const index = req.body.index
-                const original_line_items = [...line_items]
-                console.log("x", original_line_items)
-                line_items[index].artworkURL = "temp"
-                console.log("y", line_items)
-                const response = await dynamodb.updateOrder({ order_id, data: { line_items } })
-                if(response.success) {
-                    for(let i=0;i<original_line_items.length;i++) {
-                        let artworkURL = original_line_items[i].artworkURL
-                        let imageKey = artworkURL.replace("https://dwjt46l68k2gz.cloudfront.net/","")
-                        console.log(imageKey)
-                        deleteImages({ key: imageKey })
-                    }
-                    res.status(200).json(response)
-                } else {
-                    res.status(400).json(response)
+            const order_id = req.params.id
+            const line_items = JSON.parse(JSON.stringify(req.body.line_items))
+            const original_line_items = JSON.parse(JSON.stringify(req.body.line_items))
+            const index = req.body.index
+            line_items[index].artworkURL = "temp"
+            const response = await dynamodb.updateOrder({ order_id, data: { line_items } })
+            if(response.success) {
+                for(let i=0;i<original_line_items.length;i++) {
+                    let artworkURL = original_line_items[i].artworkURL
+                    let imageKey = artworkURL.replace("https://dwjt46l68k2gz.cloudfront.net/","")
+                    deleteImages({ key: imageKey })
                 }
-            } catch (error) {
-                res.status(200).json(error.response.data)
+                res.status(200).json(response)
+            } else {
+                res.status(400).json(response)
             }
         })
 
