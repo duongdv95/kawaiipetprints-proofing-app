@@ -52,18 +52,12 @@ if(dev) {
         
         server.get('/api/getorder', async (req, res) => {
             const { order_id } = req.query
-            const response = await axios.get(
-                `https://${SHOPIFYAPIKEY}:${SHOPIFYPASSWORD}@kawaiipetprints.myshopify.com//admin/api/2019-10/orders/${order_id}.json`
-            )
-            const { data } = response
-            const { order_status_url, line_items } = data.order
-            const orderDataArray = line_items.map(function(element) {
-                return {productName: element.name.replace(/ *\([^)]*\) */g, ""), quantity: element.quantity, sku: element.sku}
-            })
-            if(response.status === 200) {
-                res.status(200).json({ success: true, message: "Found orders!", orderData: {orderStatusUrl: order_status_url, orderDataArray} })
+            const response = await dynamodb.getOrder({ order_id })
+            console.log(response)
+            if(response.success) {
+                res.status(200).json(response)
             } else {
-                res.status(400).json({ success: false, message: "Order doesn't exist!", order: {} })
+                res.status(400).json(response)
             }
         })
 
@@ -150,15 +144,19 @@ if(dev) {
             })
         })
 
-        // server.delete('/admin/api/deleteorder/:id', async (req, res) => {
-        //     const order_id = req.params.id
-        //     try{
-        //         const response = await axios.delete(dynamodbREST + `/${order_id}`, {auth: {username: "test", password: "secret"}})
-        //         res.status(200).json({success: true, message: `Order ID ${order_id} successfully deleted.`, data: response.data})
-        //     } catch (error) {
-        //         res.status(200).json({success: false, message: `Order ID ${order_id} failed to delete`, data: error.response.data})
-        //     }
-        // })
+        server.delete('/admin/api/deleteorder/:id', async (req, res) => {
+            console.log("triggered")
+            const order_id = req.params.id
+            if(!(order_id && order_id.length > 0)) {
+                res.status(400).json({success: false, message: `Order ID ${order_id} failed to delete`})
+            }
+            const response = await dynamodb.deleteOrder({ order_id, deleted: true })
+            if(response.success) {
+                res.status(200).json({success: true, message: `Order ID ${order_id} successfully deleted.`, data: response.data})
+            } else {
+                res.status(200).json({success: false, message: `Order ID ${order_id} failed to delete`})
+            }
+        })
 
         server.put('/admin/api/archiveorder/:id', async (req, res) => {
             const order_id = req.params.id

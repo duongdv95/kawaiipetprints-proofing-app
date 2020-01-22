@@ -166,7 +166,10 @@ class Admin extends React.Component {
   async getOrders() {
     const { data } = await axios.get(`/admin/api/getorders`)
     const allOrdersArray = [...data.items.map((element) => {
-      return {created_at: element.created_at, email: element.email, fulfilled: element.fulfilled, line_items: element.line_items, order_id: element.order_id, order_number: element.order_number, order_status_url: element.order_status_url, proof_created: element.proof_created, updated_at: element.updated_at}
+      return {created_at: element.created_at, email: element.email, fulfilled: element.fulfilled, 
+        line_items: element.line_items, order_id: element.order_id, order_number: element.order_number, 
+        order_status_url: element.order_status_url, proof_created: element.proof_created, updated_at: element.updated_at,
+        deleted: element.deleted}
     })]
     allOrdersArray.sort(function(a, b) {
       return moment(b.created_at).format("X") - moment(a.created_at).format("X") 
@@ -288,7 +291,7 @@ class Admin extends React.Component {
           onAfterOpen={this.afterOpenModal}
           onRequestClose={this.closeModal}
           style={customStyles}
-          contentLabel="Example Modal"
+          
         >
           <ModalOrderData
           currentOrderID = {this.state.currentOrderID}

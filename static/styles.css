@@ -23,24 +23,25 @@
   color: black !important;
 } */
 
-#bg-image {
+.bg-image {
   max-width: 100%;
   object-fit: cover;
   width: auto;
 }
-#wrapper {
+
+.wrapper {
   display: inline-block;
   position: relative;
 }
 
-#other-images {
+.other-images {
   position: absolute;
-  bottom: 0;
+  bottom: -1px;
   text-align: center;
   width: 100%;
 }
 
-#other-images img {
+.other-images img {
   max-width: 68%;
 }
 

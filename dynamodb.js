@@ -53,6 +53,7 @@ async function createOrder({orderData}) {
           created_at,
           updated_at,
           approved_by_customer,
+          deleted: false
         },
       };
     let response
@@ -156,19 +157,22 @@ async function updateOrder({ order_id, data}) {
     }
 }
 
-async function deleteFixture({ url_id }) {
-    const params = {
+async function deleteOrder({ order_id, deleted }) {
+    let params = {
         TableName: table,
-        Key:{
-            url_id
-        }
-    }
-    const response = await docClient.delete(params).promise()
+        Key: {
+          order_id,
+        },
+        ExpressionAttributeValues: {':deleted': true},
+        UpdateExpression: 'SET deleted = :deleted',
+        ReturnValues: 'ALL_NEW',
+      }
+    const response = await docClient.update(params).promise()
     console.log(response)
-    if(response) {
-        return {success: true, message: `Fixture: ${url_id} deleted`, url_id}
+    if(response.Attributes) {
+        return {success: true, message: `Fixture: ${order_id} deleted`, order_id}
     } else {
-        return {success: false, message: `Error. Fixture: ${url_id} not deleted`}
+        return {success: false, message: `Error. Fixture: ${order_id} not deleted`}
     }
 }
 
@@ -177,5 +181,6 @@ module.exports = {
     getOrders,
     createOrder,
     addImagesToFixture,
-    updateOrder
+    updateOrder,
+    deleteOrder
 }
