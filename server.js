@@ -14,6 +14,8 @@ const { cloudFront }   = require('./awsconfig.js')
 var jsonParser = bodyParser.json()
 var urlencodedParser = bodyParser.urlencoded({ extended: false })
 const dynamodb = require("./dynamodb.js")
+const queryString = require("query-string");
+
 if(!dev) {
     server.use('/_next', express.static(path.join(__dirname, '.next')))
 }
@@ -53,7 +55,6 @@ if(dev) {
         server.get('/api/getorder', async (req, res) => {
             const { order_id } = req.query
             const response = await dynamodb.getOrder({ order_id })
-            console.log(response)
             if(response.success) {
                 res.status(200).json(response)
             } else {
@@ -80,9 +81,23 @@ if(dev) {
             const relevantShopifyOrdersArray = shopifyOrdersArray.orders.map(function(element) {
                 const filteredLineItemsArray = element.line_items.map(function(element) {
                     const product_name = element.name.replace(/ *\([^)]*\) */g, "")
-                    return {variant_id: element.variant_id, product_name, quantity: element.quantity, sku: element.sku, artworkURL: "temp"}
+                    const customerImages = element.properties.map(function(e) {
+                        const shopifyCDN = e.value
+                        const parsedURL = queryString.parseUrl(shopifyCDN)
+                        const imageKey = parsedURL.query.uu
+                        return `https://cdn.getuploadkit.com/${imageKey}/`
+                    })
+                    return {
+                        variant_id: element.variant_id, product_name, 
+                        quantity: element.quantity, sku: element.sku, 
+                        artworkURL: "temp", customerImages}
                 })
-                return {proof_created: false, email: element.email, order_number: element.order_number, order_id: element.id, order_status_url: element.order_status_url, line_items: filteredLineItemsArray, created_at: element.created_at, updated_at: element.updated_at}
+                return {
+                    proof_created: false, email: element.email, order_number: element.order_number, 
+                    order_id: element.id, order_status_url: element.order_status_url, 
+                    line_items: filteredLineItemsArray, created_at: element.created_at, 
+                    updated_at: element.updated_at
+                }
             })
             const dynamodbIDArrays = new Set(ordersProofsArray.map(({order_id}) => order_id))
             for(let i=0; i<relevantShopifyOrdersArray.length; i++) {
@@ -98,7 +113,11 @@ if(dev) {
                     }()
                     // iterate through shopify orders (4 items) check if each other items exist in dynamodb already (5 items)
                     if(!dynamodbIDArrays.has(order_id)) {
-                        const orderData = {order_id, fulfilled: false, proof_created: element.proof_created, email: element.email, order_number: element.order_number, order_status_url: element.order_status_url, line_items: element.line_items, created_at: element.created_at, updated_at: element.updated_at}
+                        const orderData = {
+                            order_id, fulfilled: false, proof_created: element.proof_created, 
+                            email: element.email, order_number: element.order_number, 
+                            order_status_url: element.order_status_url, line_items: element.line_items, 
+                            created_at: element.created_at, updated_at: element.updated_at}
                         const response = await dynamodb.createOrder({ orderData })
                         if(response.status === 200) {
                             successCount++
@@ -164,7 +183,7 @@ if(dev) {
                 `https://${SHOPIFYAPIKEY}:${SHOPIFYPASSWORD}@kawaiipetprints.myshopify.com/admin/api/2019-10/orders/${order_id}.json`
                 )
             const fulfilled = (shopifyResponse.data.order.fulfillment_status === "fulfilled") ? true : false
-            const response = await dynamodb.updateOrder({ order_id, data: { fulfilled }})
+            const response = await dynamodb.archiveOrder({ order_id, data: { fulfilled }})
             if(response.success) {
                 res.status(200).json(response)
             } else {
@@ -178,7 +197,7 @@ if(dev) {
             const original_line_items = JSON.parse(JSON.stringify(req.body.line_items))
             const index = req.body.index
             line_items[index].artworkURL = "temp"
-            const response = await dynamodb.updateOrder({ order_id, data: { line_items } })
+            const response = await dynamodb.deleteProof({ order_id, data: { line_items } })
             if(response.success) {
                 for(let i=0;i<original_line_items.length;i++) {
                     let artworkURL = original_line_items[i].artworkURL

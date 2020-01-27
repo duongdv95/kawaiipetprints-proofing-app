@@ -24,6 +24,7 @@
     "nodemon": "^2.0.2",
     "path-match": "^1.2.4",
     "pure-react-carousel": "^1.24.1",
+    "query-string": "^6.10.1",
     "react": "^16.12.0",
     "react-dom": "^16.12.0",
     "react-modal": "^3.11.1",

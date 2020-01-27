@@ -3,80 +3,60 @@ import Header from '../components/header.js'
 // import Slider from "react-slick"
 import axios from 'axios'
 import Modal from 'react-modal';
-import { CarouselProvider, Slider, Slide, ButtonBack, ButtonNext, DotGroup, WithStore, Dot } from 'pure-react-carousel';
+import { CarouselProvider, Slider, Slide, ButtonBack, ButtonNext, DotGroup, WithStore, Dot, Image } from 'pure-react-carousel';
 
 Modal.setAppElement("#__next")
 var moment = require('moment');
 const meta = { title: 'Order Dashboard', description: 'Order Dashboard' }
-const customStyles = {
-  content: {
-    top: '50%',
-    left: '50%',
-    right: '40px',
-    bottom: 'unset',
-    marginRight: '-50%',
-    transform: 'translate(-50%, -50%)'
-  }
-};
-
-function History() {
-  return (
-    <div style={{ backgroundColor: "gray" }}>
-      <div>
-        History
-      </div>
-      <div>
-        Daniel Jan 5 at 6:32 PM
-        Description
-      </div>
-      <div>
-        Kawaii Pet Prints Jan 5 at 6:32 PM
-        Created Proof 1
-      </div>
-      <div>
-        Daniel Jan 5 at 6:32 PM
-        Approved Proof 1 (include options selected such as orientation, etc)
-      </div>
-    </div>
-  )
-}
 
 function OrderProof(props) {
   const {
-    orderInfo, loading, openModal, selectedBackgroundArray } = props
+    orderInfo, loading, openModal, 
+    selectedBackgroundArray, updateCurrentSlide } = props
   const orderMap = (!loading && orderInfo.items.proof_created) ? orderInfo.items.line_items.map(function (element, index) {
     return (
-      <div key={index}>
-        <h3>{element.product_name}</h3>
-        <button>Request Revision</button>
-        <button onClick={() => {
-          openModal({ currentLineItem: index })
-        }}>Select Background</button>
+      <div className="order-proof-item" key={index}>
+        <div className="header">{element.product_name}</div>
+        <a href={orderInfo.items.line_items[index].customerImages[0]} target="_blank">Original Image</a>
+        <div className="order-buttons">
+          <button id="revise-button">Request Revision</button>
+          <button id="select-bg-button" onClick={() => {
+            updateCurrentSlide(0)
+            openModal({ currentLineItem: index })
+          }}>Select Background</button>
+        </div>
         <div className="wrapper">
           <img src={selectedBackgroundArray[index]} className="bg-image"></img>
           <div className="other-images">
             <img src={element.artworkURL} />
           </div>
         </div>
-        <button>Back</button><button>Approve</button>
-        <div>
-          <label style={{ fontWeight: "bold" }}>Orientation</label>
-          <input type="radio" checked /><label>Horizontal</label>
-          <input type="radio" /><label>Vertical</label>
-        </div>
       </div>
     )
   }) : (null)
 
-  const orderStatus = (!loading) ? (<a href={orderInfo.items.line_items}>Order Status</a>) : (null)
-  return (
-    <div>
-      <h1>Your Order Proof</h1>
-      {orderStatus}
+  const renderOrderProof = (!loading) ?
+  (
+    <div className="order-proof">
+      <div className="header">
+        <h1>Your Order Proof Is Ready!</h1>
+      </div>
+      <a href={orderInfo.items.order_status_url}>Order Status</a>
       <div>
         {orderMap}
       </div>
+      <div className="approve-art">
+        <button>
+          Approve
+        </button>
+      </div>
     </div>
+  )
+  :
+  (null)
+
+  return (
+    renderOrderProof
   )
 }
 
@@ -84,17 +64,17 @@ class ChangeCategory extends React.Component {
   render() {
     const { handleSubmit, updateCurrentSlide } = this.props
     return (
-      <div>
+      <div id="change-category">
         <button onClick={(event) => {
           this.props.carouselStore.setStoreState({currentSlide: 0})
           updateCurrentSlide(0)
           handleSubmit(event)
-        }} name="category-prev" type="submit">Prev</button>
+        }} name="category-prev" type="submit">Previous Category</button>
         <button onClick={(event) => {
           this.props.carouselStore.setStoreState({currentSlide: 0})
           updateCurrentSlide(0)
           handleSubmit(event)
-        }} name="category-next" type="submit">Next</button>
+        }} name="category-next" type="submit">Next Category</button>
       </div>
     )
   }
@@ -106,7 +86,7 @@ class BackButton extends React.Component {
     const updatedSlide = (currentSlide === 0) ? totalSlides - 1 : currentSlide - 1 
     console.log(updatedSlide)
     return (
-      <ButtonBack onClick={()=>updateCurrentSlide(updatedSlide)}>Back</ButtonBack>
+      <ButtonBack onClick={()=>updateCurrentSlide(updatedSlide)}><i class="fas fa-chevron-left"></i></ButtonBack>
     )
   }
 }
@@ -116,7 +96,7 @@ class NextButton extends React.Component {
     const { currentSlide, totalSlides, updateCurrentSlide } = this.props
     const updatedSlide = (currentSlide ===  totalSlides - 1) ? 0 : currentSlide + 1 
     return (
-      <ButtonNext onClick={()=>updateCurrentSlide(updatedSlide)}>Next</ButtonNext>
+      <ButtonNext onClick={()=>updateCurrentSlide(updatedSlide)}><i class="fas fa-chevron-right"></i></ButtonNext>
     )
   }
 }
@@ -141,7 +121,9 @@ class Carousel extends React.Component {
 
     const backgroundsMap = backgroundsArray[currentCategory].map((element, index)=>{
       return (
-        <Slide key={index} index={index}><img style={style} src={element} /></Slide>
+        <Slide key={index} index={index}>
+          <Image src={element} style={style}/>
+        </Slide>
       )
     })
 
@@ -172,33 +154,37 @@ class Carousel extends React.Component {
       )
     })
     return (
-      <div>
-        <span style={{ fontWeight: "bold" }}>{backgroundCategories[currentCategory]}</span>
+      <div id="carousel">
+        <div className="header">{backgroundCategories[currentCategory]}</div>
         <CarouselProvider
           naturalSlideWidth={120}
           naturalSlideHeight={100}
           totalSlides={backgroundsMap.length}
           infinite={true}
+          dragEnabled={false}
         >
           <CarouselChangeCategory/>
-          <Slider>
-            {backgroundsMap}
-          </Slider>
-          <div>
+          <div className="slider">
+            <Slider>
+              {backgroundsMap}
+            </Slider>
+            <EnhancedBackButton></EnhancedBackButton>
+            <EnhancedNextButton></EnhancedNextButton>
+          </div>
+          <div className="dot">
             {dotMap}
           </div>
-          {/* <DotGroup/> */}
-          <EnhancedBackButton></EnhancedBackButton>
-          <EnhancedNextButton></EnhancedNextButton>
         </CarouselProvider>
-        <button
-          data-currentlineitem={currentLineItem}
-          onClick={handleSubmit}
-          name="select-bg"
-          type="submit"
-        >
-          Select Background
-        </button>
+        <div className="choose-bg">
+          <button
+            data-currentlineitem={currentLineItem}
+            onClick={handleSubmit}
+            name="select-bg"
+            type="submit"
+          >
+            Select Background
+          </button>
+        </div>
       </div> 
     )
   }
@@ -274,18 +260,6 @@ class Customer extends React.Component {
     }
   }
 
-  renderDogList() {
-    return (
-      <ul>
-        {this.state.dogs.map((dog, key) =>
-          <li key={key}>
-            <img src={dog.url} alt='' />
-          </li>
-        )}
-      </ul>
-    )
-  }
-
   handleSubmit(event) {
     event.preventDefault()
     const eventType = event.target.name
@@ -337,35 +311,40 @@ class Customer extends React.Component {
       <div>
         <Header meta={meta}>
         </Header>
-        <div style={{ padding: "0 1em" }}>
-          <a href="/">
-            <img src="/static/logo.png" alt='' width="200px" />
-          </a>
-          <OrderProof
-            backgroundCategories={this.state.backgroundCategories}
-            currentSlide={this.state.currentSlide}
-            backgroundsArray={this.state.backgroundsArray[this.state.currentCategory]}
-            handleSubmit={this.handleSubmit}
-            orderInfo={this.state.orderInfo}
-            loading={this.state.loading}
-            openModal={this.openModal}
-            selectedBackgroundArray={this.state.selectedBackgroundArray}
-          />
-          <Modal
-            isOpen={this.state.modalIsOpen}
-            onRequestClose={this.closeModal}
-            style={customStyles}
-          >
-            <Carousel
-              backgroundsArray={this.state.backgroundsArray}
-              currentCategory={this.state.currentCategory}
-              backgroundCategories={this.state.backgroundCategories}
-              handleSubmit={this.handleSubmit}
-              currentLineItem={this.state.currentLineItem}
-              updateCurrentSlide={this.updateCurrentSlide.bind(this)}
-            />
-          </Modal>
-          <History />
+        <div id="customer" >
+          <div className="nav">
+            <a href="/">
+              <img src="/static/logo.png" alt='' width="200px" />
+            </a>
+          </div>
+          <div className="main">
+            <div className="content-wrap">
+              <OrderProof
+                backgroundCategories={this.state.backgroundCategories}
+                currentSlide={this.state.currentSlide}
+                backgroundsArray={this.state.backgroundsArray[this.state.currentCategory]}
+                handleSubmit={this.handleSubmit}
+                orderInfo={this.state.orderInfo}
+                loading={this.state.loading}
+                openModal={this.openModal}
+                selectedBackgroundArray={this.state.selectedBackgroundArray}
+                updateCurrentSlide={this.updateCurrentSlide.bind(this)}
+              />
+              <Modal
+                isOpen={this.state.modalIsOpen}
+                onRequestClose={this.closeModal}
+              >
+                <Carousel
+                  backgroundsArray={this.state.backgroundsArray}
+                  currentCategory={this.state.currentCategory}
+                  backgroundCategories={this.state.backgroundCategories}
+                  handleSubmit={this.handleSubmit}
+                  currentLineItem={this.state.currentLineItem}
+                  updateCurrentSlide={this.updateCurrentSlide.bind(this)}
+                />
+              </Modal>
+            </div>
+          </div>
         </div>
       </div>
     )

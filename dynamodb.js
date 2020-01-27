@@ -106,8 +106,8 @@ async function addImagesToFixture({ order_id, line_items }) {
     }
 }
 
-async function updateOrder({ order_id, data}) {
-    const { fulfilled, line_items } = data
+async function archiveOrder({ order_id, data}) {
+    const { fulfilled } = data
     const params = function () {
         let paramsTemp = {
           TableName: table,
@@ -122,6 +122,35 @@ async function updateOrder({ order_id, data}) {
           paramsTemp.ExpressionAttributeValues[':fulfilled'] = fulfilled
           paramsTemp.UpdateExpression = 'SET fulfilled = :fulfilled'
         }
+        return paramsTemp
+    }()
+
+    if(fulfilled && typeof fulfilled !== 'boolean') {
+        return {success: false, message: `Couldn't update the order item - fulfilled must be true or false.`}
+    }
+    if(!fulfilled) {
+        return {success: false, message: `Error. Order: ${order_id} is not fulfilled`}
+    }
+    const response = await docClient.update(params).promise()
+    if(response.Attributes) {
+        return {success: true, message: `Fixture: ${order_id} archived.`, order_id}
+    } else {
+        return {success: false, message: `Error. Order: ${order_id} couldn't archive.`}
+    }
+}
+
+async function deleteProof({ order_id, data }) {
+    const { line_items } = data
+    const params = function () {
+        let paramsTemp = {
+          TableName: table,
+          Key: {
+            order_id,
+          },
+          ExpressionAttributeValues: {},
+          UpdateExpression: '',
+          ReturnValues: 'ALL_NEW',
+        };
         if(line_items) {
           let proofQuantity = line_items.length
           let proofsCompleted = 0
@@ -143,17 +172,11 @@ async function updateOrder({ order_id, data}) {
         return paramsTemp
     }()
 
-    if(data.fulfilled && typeof data.fulfilled !== 'boolean') {
-        return {success: false, message: `Couldn't update the order item - fulfilled must be true or false.`}
-    }
-    if(!fulfilled) {
-        return {success: false, message: `Error. Order: ${order_id} is not fulfulilled`}
-    }
     const response = await docClient.update(params).promise()
     if(response.Attributes) {
-        return {success: true, message: `Fixture: ${order_id} updated`, order_id}
+        return {success: true, message: `Fixture: ${order_id} - proof deleted.`, order_id}
     } else {
-        return {success: false, message: `Error. Order: ${order_id} did not update`}
+        return {success: false, message: `Error. Order: ${order_id} - proof not deleted.`}
     }
 }
 
@@ -181,6 +204,7 @@ module.exports = {
     getOrders,
     createOrder,
     addImagesToFixture,
-    updateOrder,
-    deleteOrder
+    deleteOrder,
+    deleteProof,
+    archiveOrder
 }
