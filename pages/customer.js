@@ -4,6 +4,7 @@ import Header from '../components/header.js'
 import axios from 'axios'
 import Modal from 'react-modal';
 import { CarouselProvider, Slider, Slide, ButtonBack, ButtonNext, DotGroup, WithStore, Dot, Image } from 'pure-react-carousel';
+const flatten = require("lodash.flatten")
 
 Modal.setAppElement("#__next")
 var moment = require('moment');
@@ -84,9 +85,8 @@ class BackButton extends React.Component {
   render() {
     const { currentSlide, totalSlides, updateCurrentSlide }  = this.props
     const updatedSlide = (currentSlide === 0) ? totalSlides - 1 : currentSlide - 1 
-    console.log(updatedSlide)
     return (
-      <ButtonBack onClick={()=>updateCurrentSlide(updatedSlide)}><i class="fas fa-chevron-left"></i></ButtonBack>
+      <ButtonBack onClick={()=>updateCurrentSlide(updatedSlide)}><i className="fas fa-chevron-left"></i></ButtonBack>
     )
   }
 }
@@ -96,7 +96,7 @@ class NextButton extends React.Component {
     const { currentSlide, totalSlides, updateCurrentSlide } = this.props
     const updatedSlide = (currentSlide ===  totalSlides - 1) ? 0 : currentSlide + 1 
     return (
-      <ButtonNext onClick={()=>updateCurrentSlide(updatedSlide)}><i class="fas fa-chevron-right"></i></ButtonNext>
+      <ButtonNext onClick={()=>updateCurrentSlide(updatedSlide)}><i className="fas fa-chevron-right"></i></ButtonNext>
     )
   }
 }
@@ -190,6 +190,19 @@ class Carousel extends React.Component {
   }
 }
 
+function PreloadImages (props) {
+  const imagesArray = flatten(props.backgroundsArray)
+  const imagesMap = imagesArray.map(function(element, index){
+    return (
+      <img key={index} src={element} style={{display: "none"}}/>
+    )
+  })
+  return (
+    <React.Fragment>
+      {imagesMap}
+    </React.Fragment>
+  )
+}
 class Customer extends React.Component {
   static getInitialProps({ query }) {
     let props = { order_id: query.order_id }
@@ -208,9 +221,9 @@ class Customer extends React.Component {
           ["/static/pattern1.png", "/static/pattern2.png"],
           ["/static/floral1.png", "/static/floral2.png", "/static/floral3.png"],
           ["/static/food1.png", "/static/food2.png"],
-          ["/static/food2.png"],
-          ["/static/food2.png"],
-          ["/static/food2.png"]
+          ["/static/animal1.png", "/static/animal2.png"],
+          ["/static/popculture1.png", "/static/popculture2.png"],
+          ["/static/color1.png", "/static/color2.png"]
         ],
       currentSlide: 0,
       orderInfo: {},
@@ -225,7 +238,6 @@ class Customer extends React.Component {
     this.handleSubmit = this.handleSubmit.bind(this)
     this.openModal = this.openModal.bind(this);
     this.closeModal = this.closeModal.bind(this);
-    // this.fetchData = this.fetchData.bind(this)
   }
   
   async componentDidMount() {
@@ -298,7 +310,6 @@ class Customer extends React.Component {
   }
 
   updateCurrentSlide(currentSlide) {
-    console.log(currentSlide)
     this.setState({ currentSlide })
   }
 
@@ -343,6 +354,9 @@ class Customer extends React.Component {
                   updateCurrentSlide={this.updateCurrentSlide.bind(this)}
                 />
               </Modal>
+              <PreloadImages
+              backgroundsArray={this.state.backgroundsArray}
+              />
             </div>
           </div>
         </div>

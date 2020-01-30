@@ -123,11 +123,22 @@ body {
 .ReactModal__Content {
   top: 50% !important; 
   left: 50% !important;
+  right: auto !important;
+  bottom: auto !important;
+  margin-right: -50% !important;
+  transform: translate(-50%, -50%) !important;
+  width: 87% !important;
+  min-width: 45% !important;
+}
+
+/* .ReactModal__Content {
+  top: 50% !important; 
+  left: 50% !important;
   right: 40px !important;
   bottom: unset !important;
   margin-right: -50% !important;
   transform: translate(-50%, -50%) !important;
-}
+} */
 
 #customer .nav {
   display: flex;
@@ -221,9 +232,9 @@ body {
   justify-content: center;
 }
 @media(min-width: 600px) {
-  /* .ReactModal__Content {
-    width: 70%
-  } */
+  .ReactModal__Content {
+    max-width: 45% !important;
+  }
   #customer .main{
     padding: 0 1em;
     display: grid;
