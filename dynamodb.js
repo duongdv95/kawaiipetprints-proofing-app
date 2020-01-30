@@ -49,11 +49,12 @@ async function createOrder({orderData}) {
           email,
           order_status_url,
           line_items,
+          approved_by_customer,
           fulfilled,
+          deleted: false,
+          approved: false,
           created_at,
           updated_at,
-          approved_by_customer,
-          deleted: false
         },
       };
     let response
@@ -103,6 +104,31 @@ async function addImagesToFixture({ order_id, line_items }) {
         return {success: true, message: `Images added to database for Fixture: ${order_id}`}
     } else {
         return {success: false, message: `Error. Images did not upload for Fixture: ${order_id}`}
+    }
+}
+
+async function approveOrder({ order_id, data}) {
+    const { selectedBackgroundArray } = data
+    if(!(selectedBackgroundArray && selectedBackgroundArray.length > 0)) {
+        return {success: false, message: "Invalid POST data"}
+    }
+    const params = {
+        TableName: table,
+        Key: {
+        order_id,
+        },
+        ExpressionAttributeValues: {
+            ":approved": true,
+            ":selectedBackgroundArray": selectedBackgroundArray
+        },
+        UpdateExpression: 'SET approved = :approved, selectedBackgroundArray = :selectedBackgroundArray',
+        ReturnValues: 'ALL_NEW',
+    }
+    const response = await docClient.update(params).promise()
+    if(response.Attributes) {
+        return {success: true, message: `Fixture: ${order_id} approved.`, selectedBackgroundArray}
+    } else {
+        return {success: false, message: `Error. Order: ${order_id} could not be approved.`}
     }
 }
 
@@ -206,5 +232,6 @@ module.exports = {
     addImagesToFixture,
     deleteOrder,
     deleteProof,
-    archiveOrder
+    archiveOrder,
+    approveOrder
 }

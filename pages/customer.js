@@ -47,7 +47,7 @@ function OrderProof(props) {
         {orderMap}
       </div>
       <div className="approve-art">
-        <button>
+        <button onClick={props.approveOrder}>
           Approve
         </button>
       </div>
@@ -313,10 +313,14 @@ class Customer extends React.Component {
     this.setState({ currentSlide })
   }
 
-  update(current) {
-    console.log(current)
-    this.setState({ slideIndex: current })
+  async approveOrder() {
+    const { data } = await axios.post(
+      `/api/approveorder?order_id=${this.props.order_id}`,
+    { selectedBackgroundArray: this.state.selectedBackgroundArray}
+    )
+    console.log(data)
   }
+  
   render() {
     return (
       <div>
@@ -340,6 +344,7 @@ class Customer extends React.Component {
                 openModal={this.openModal}
                 selectedBackgroundArray={this.state.selectedBackgroundArray}
                 updateCurrentSlide={this.updateCurrentSlide.bind(this)}
+                approveOrder={this.approveOrder.bind(this)}
               />
               <Modal
                 isOpen={this.state.modalIsOpen}

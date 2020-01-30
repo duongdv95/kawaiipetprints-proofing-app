@@ -62,6 +62,18 @@ if(dev) {
             }
         })
 
+        server.post("/api/approveorder", jsonParser, async (req, res) => {
+            const { order_id } = req.query
+            const { selectedBackgroundArray } = req.body 
+            const response = await dynamodb.approveOrder({ order_id, data: { selectedBackgroundArray } })
+            console.log(response)
+            if(response.success) {
+                res.status(200).json(response)
+            } else {
+                res.status(400).json(response)
+            }
+        })
+
         server.get('/admin/api/getorders', async (req, res) => {
             const ordersResponse = await dynamodb.getOrders()
             res.status(200).json(ordersResponse)
