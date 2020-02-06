@@ -18,7 +18,9 @@ function OrderProof(props) {
     return (
       <div className="order-proof-item" key={index}>
         <div className="header">{element.product_name}</div>
-        <a href={orderInfo.items.line_items[index].customerImages[0]} target="_blank">Original Image</a>
+        <div className="original-image">
+          <a href={orderInfo.items.line_items[index].customerImages[0]} target="_blank">Original Image</a>
+        </div>
         <div className="order-buttons">
           <button id="revise-button">Request Revision</button>
           <button id="select-bg-button" onClick={() => {
@@ -42,7 +44,11 @@ function OrderProof(props) {
       <div className="header">
         <h1>Your Order Proof Is Ready!</h1>
       </div>
-      <a href={orderInfo.items.order_status_url}>Order Status</a>
+      <div className="order-status">
+        <button>
+          <a href={orderInfo.items.order_status_url}>Order Status</a>
+        </button> 
+      </div>
       <div>
         {orderMap}
       </div>

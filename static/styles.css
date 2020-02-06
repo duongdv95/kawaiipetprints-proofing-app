@@ -55,7 +55,7 @@ body {
 
 #order-table {
   display:grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr;
   border-bottom: 1px solid black;
   border-right: 1px solid black;
   border-left: 1px solid black;
@@ -220,6 +220,36 @@ body {
 .order-proof .header {
   display: flex;
   justify-content: center;
+}
+
+.order-proof .order-status a {
+  text-decoration: none;
+  color: black;
+}
+.order-proof .order-status {
+  display: flex;
+  justify-content: center;
+}
+
+.original-image {
+  display: flex;
+  margin-top: 1em;
+  justify-content: center;
+}
+
+.original-image a {
+  text-decoration: none;
+  color: blue;
+}
+
+.order-proof .order-status button {
+  background-color: #e6e6e6;
+  border: none;
+  padding: 12px 30px;
+  text-align: center;
+  font-size: 1em;
+  cursor: pointer;
+  font-weight: 700;
 }
 
 #carousel .header {

@@ -30,10 +30,19 @@ function OrdersTable(props) {
       (<div className="item" style={{ backgroundColor: "red", color: "white" }}>
       Awaiting Art Upload
     </div>) 
+    const approvedStatus = (element.approved) ? 
+    (<div className="item" style={{ backgroundColor: "green", color: "white" }}>
+        True
+      </div>) 
+      :
+      (<div className="item" style={{ backgroundColor: "red", color: "white" }}>
+      False
+    </div>) 
     const created_at = moment(element.created_at).format("dddd, MMMM Do YYYY, h:mm a")
     return (
       <React.Fragment key={element.order_number}>
         {proofStatus}
+        {approvedStatus}
         <div className="item">
           <button onClick={() => openModal(element.order_id)}>Upload</button>
         </div>
@@ -56,6 +65,9 @@ function OrdersTable(props) {
     <div id="order-table" >
       <div className="item header">
         Proof Status
+      </div>
+      <div className="item header">
+        Approved
       </div>
       <div className="item header">
         Upload Art
@@ -169,7 +181,7 @@ class Admin extends React.Component {
       return {created_at: element.created_at, email: element.email, fulfilled: element.fulfilled, 
         line_items: element.line_items, order_id: element.order_id, order_number: element.order_number, 
         order_status_url: element.order_status_url, proof_created: element.proof_created, updated_at: element.updated_at,
-        deleted: element.deleted}
+        deleted: element.deleted, approved: element.approved}
     })]
     allOrdersArray.sort(function(a, b) {
       return moment(b.created_at).format("X") - moment(a.created_at).format("X") 
