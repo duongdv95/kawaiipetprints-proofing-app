@@ -1,8 +1,30 @@
-import React from 'react'
+import React, { Component } from 'react'
+import Modal from 'react-modal';
 import Header from '../components/header.js'
 import axios from 'axios'
 import Router from 'next/router'
+import { toast } from 'react-toastify';
 const meta = { title: 'Dashboard Login', description: 'Login to dashboard to view order proof/status' }
+const customStyles = {
+  content : {
+    top                   : '40%',
+    left                  : '50%',
+    right                 : 'auto',
+    bottom                : 'auto',
+    marginRight           : '-50%',
+    transform             : 'translate(-50%, -50%)',
+    display               : 'flex',
+    background            : 'none',
+    border                : 'none',
+    justifyContent        : 'center'
+  }
+};
+Modal.setAppElement("#__next")
+toast.configure({
+  position: "bottom-right",
+  autoClose: 2000,
+  hideProgressBar: true,
+})
 
 class IndexPage extends React.Component {
   constructor(props) {
@@ -10,18 +32,17 @@ class IndexPage extends React.Component {
     this.handleChange = this.handleChange.bind(this)
     this.handleSubmit = this.handleSubmit.bind(this)
     this.state = {
-      loading: true,
+      loading: false,
       dog: {},
       order_id: "",
       loginOrderStatus: "",
       email: "",
       orderNumber: ""
     }
-    this.fetchData = this.fetchData.bind(this)
   }
 
   async componentDidMount() {
-    await this.fetchData()
+
   }
 
   async loginCustomer() {
@@ -33,17 +54,6 @@ class IndexPage extends React.Component {
       order_id: data.order_id
     })
     return data
-  }
-
-  async fetchData() {
-    this.setState({ loading: true })
-    const { data } = await axios.get(
-      'https://api.thedogapi.com/v1/images/search?limit=1'
-    )
-    this.setState({
-      dog: data[0],
-      loading: false
-    })
   }
 
   handleChange(event) {
@@ -65,15 +75,42 @@ class IndexPage extends React.Component {
     const eventType = event.target.name
     switch (eventType) {
       case "loginsubmit":
+        this.setState({ loading: true })
         const { success } = await this.loginCustomer()
+        this.setState({ loading: false })
         if(success) {
+          this.successNotify()
           Router.push(`/customer?order_id=${this.state.order_id}`)
+        } else {
+          this.errorNotify()
         }
         break
 
       default: console.log("error")
     }
   }
+
+  errorNotify = () => toast.error(
+  <div className="error-message">
+    <div>
+      <i class="fas fa-exclamation-triangle"></i> Warning!
+    </div>
+    <div>
+      Order does not exist.
+    </div>
+  </div>
+  );
+
+  successNotify = () => toast.success(
+    <div className="success-message">
+      <div>
+        <i class="far fa-check-circle"></i> Success!
+      </div>
+      <div>
+        Redirecting..
+      </div>
+    </div>
+  );
 
   render() {
     return (
@@ -111,6 +148,12 @@ class IndexPage extends React.Component {
             <img src="/static/logo.png" alt='' width="200px" />
           </div>
         </div>
+        <Modal
+          isOpen={this.state.loading}
+          style={customStyles}
+        >
+          <img src="static/loading.svg"/>
+        </Modal>
       </div>
     )
   }
