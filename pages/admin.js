@@ -6,7 +6,7 @@ var moment = require('moment');
 moment().format();
 Modal.setAppElement("#__next")
 
-const meta = { title: 'Order Dashboard', description: 'Order Dashboard' }
+const meta = { title: 'Admin Dashboard', description: 'Admin Dashboard' }
 
 const customStyles = {
   content : {
@@ -23,19 +23,19 @@ function OrdersTable(props) {
   const { orderData, archiveOrder, openModal } = props
   const orderMap = orderData.map((element) => {
     const proofStatus = (element.proof_created) ? 
-    (<div className="item" style={{ backgroundColor: "green", color: "white" }}>
+    (<div className="item uploaded-art">
         Art Uploaded!
       </div>) 
       :
-      (<div className="item" style={{ backgroundColor: "red", color: "white" }}>
+      (<div className="item awaiting-art">
       Awaiting Art Upload
     </div>) 
     const approvedStatus = (element.approved) ? 
-    (<div className="item" style={{ backgroundColor: "green", color: "white" }}>
+    (<div className="item approved-art">
         True
       </div>) 
       :
-      (<div className="item" style={{ backgroundColor: "red", color: "white" }}>
+      (<div className="item unapproved-art">
       False
     </div>) 
     const created_at = moment(element.created_at).format("dddd, MMMM Do YYYY, h:mm a")
@@ -86,7 +86,7 @@ function OrdersTable(props) {
   )
 }
 
-const ModalOrderData = (props) => {
+const ImageUpload = (props) => {
   const { currentOrderID, deleteProof, orderData, archivedOrderData, closeModal, handleChange, submitProof} = props
   if(!currentOrderID) return (null)
   const selectedOrder = [...orderData, ...archivedOrderData].filter((element) => element.order_id === currentOrderID)[0]
@@ -112,7 +112,7 @@ const ModalOrderData = (props) => {
         return (
           <div style={{display:"grid"}}>
             <div>{element.product_name}</div>
-            <a href={element.artworkURL}>Image</a>
+            <a href={element.artworkURL} target="_blank">Image</a>
             <button onClick={() => deleteProof({order_id: currentOrderID, index, line_items})}>Delete Image</button>
           </div>
         )
@@ -127,7 +127,7 @@ const ModalOrderData = (props) => {
     )
   })
   return (
-    <div style={{display: "grid"}}>
+    <div className="image-upload">
       <h2>Order {selectedOrder.order_number}</h2>
       <div>
         <span style={{fontWeight: "bold"}}>Email</span> {selectedOrder.email}
@@ -284,37 +284,37 @@ class Admin extends React.Component {
       <div>
         <Header meta={meta}>
         </Header>
-        <div style={{ padding: "0 1em"}}>
-        <img src="/static/logo.png" alt='' width="200px" />
-        <h1>Orders</h1>
-        <OrdersTable 
-        orderData={this.state.orderData}
-        openModal={this.openModal}
-        archiveOrder={this.archiveOrder}
-        />
-        <h1>Archived Orders</h1>
-        <OrdersTable 
-        orderData={this.state.archivedOrderData}
-        openModal={this.openModal}
-        archiveOrder={this.archiveOrder}
-        />
-        <Modal
-          isOpen={this.state.modalIsOpen}
-          onAfterOpen={this.afterOpenModal}
-          onRequestClose={this.closeModal}
-          style={customStyles}
-          
-        >
-          <ModalOrderData
-          currentOrderID = {this.state.currentOrderID}
-          deleteProof = {this.deleteProof}
-          orderData = {this.state.orderData}
-          archivedOrderData = {this.state.archivedOrderData}
-          closeModal = {this.closeModal}
-          handleChange = {this.handleChange}
-          submitProof = {this.submitProof}
+        <div id="admin">
+          <img src="/static/logo.png" alt='' width="200px" />
+          <h1>Orders</h1>
+          <OrdersTable 
+          orderData={this.state.orderData}
+          openModal={this.openModal}
+          archiveOrder={this.archiveOrder}
           />
-        </Modal>
+          <h1>Archived Orders</h1>
+          <OrdersTable 
+          orderData={this.state.archivedOrderData}
+          openModal={this.openModal}
+          archiveOrder={this.archiveOrder}
+          />
+          <Modal
+            isOpen={this.state.modalIsOpen}
+            onAfterOpen={this.afterOpenModal}
+            onRequestClose={this.closeModal}
+            style={customStyles}
+            
+          >
+            <ImageUpload
+            currentOrderID = {this.state.currentOrderID}
+            deleteProof = {this.deleteProof}
+            orderData = {this.state.orderData}
+            archivedOrderData = {this.state.archivedOrderData}
+            closeModal = {this.closeModal}
+            handleChange = {this.handleChange}
+            submitProof = {this.submitProof}
+            />
+          </Modal>
         </div>
       </div>
     )

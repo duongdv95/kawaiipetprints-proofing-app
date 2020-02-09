@@ -77,25 +77,38 @@ class IndexPage extends React.Component {
 
   render() {
     return (
-      <div>
+      <div id="index">
         <Header meta={meta} >
         </Header>
-        <div>
-          <div>
+        <div className="background-left">
+          <div className="login-container">
+            <div className="logo-container">
+              <img src="/static/logo.png" alt='' width="200px" />
+            </div>
+            <div className="login-form">
+              <div>
+                <h1>Dashboard Login</h1>
+              </div>
+              <form onSubmit={this.handleSubmit} name="loginsubmit">
+                <div className="form-group">
+                  <input onChange={this.handleChange} name="ordernumber" placeholder="Enter your Order Number" required type="text" />
+                </div>
+                <div className="form-group">
+                  <input onChange={this.handleChange} name="email" placeholder="Enter your email" required type="email" />
+                </div>
+                <div>
+                  <input className="submit" type="submit" value="Sign In" />
+                </div>
+              </form>
+            </div>
+            <div>
+              Not a customer? <a href="#">Shop Now</a>
+            </div>
+          </div>
+        </div>
+        <div className="background-right">
+          <div className="logo-container">
             <img src="/static/logo.png" alt='' width="200px" />
-          </div>
-          <div>
-            <h1>Dashboard Login</h1>
-          </div>
-          <div>
-            <form onSubmit={this.handleSubmit} name="loginsubmit">
-              <input onChange={this.handleChange} name="ordernumber" placeholder="Enter your Order Number" required type="text" />
-              <input onChange={this.handleChange} name="email" placeholder="Enter your email" required type="email" />
-              <input type="submit" value="Sign In" />
-            </form>
-          </div>
-          <div>
-            Not a customer? <a href="#">Shop Now</a>
           </div>
         </div>
       </div>

@@ -45,9 +45,7 @@ function OrderProof(props) {
         <h1>Your Order Proof Is Ready!</h1>
       </div>
       <div className="order-status">
-        <button>
-          <a href={orderInfo.items.order_status_url}>Order Status</a>
-        </button> 
+        <a href={orderInfo.items.order_status_url} target="_blank">Order Status</a>
       </div>
       <div>
         {orderMap}

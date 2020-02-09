@@ -31,8 +31,8 @@
     "react-modal": "^3.11.1",
     "react-slick": "^0.25.2",
     "serverless-apigw-binary": "^0.4.4",
-    "serverless-domain-manager": "^3.3.0",
-    "serverless-http": "^2.3.0",
+    "serverless-domain-manager": "^3.3.1",
+    "serverless-http": "^2.3.1",
     "serverless-offline": "^5.12.1",
     "url": "^0.11.0"
   }
