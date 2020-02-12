@@ -255,16 +255,15 @@ class Customer extends React.Component {
     super(props)
     this.state = {
       loading: true,
-      backgroundCategories: ["Color Pattern", "Plants", "Food", "Animals", "Pop Culture", "Solid colors"],
+      backgroundCategories: ["Color Pattern", "Plants", "Food", "Animals", "Solid colors"],
       currentCategory: 0,
       backgroundsArray:
         [
-          ["/static/pattern1.png", "/static/pattern2.png"],
-          ["/static/floral1.png", "/static/floral2.png", "/static/floral3.png"],
-          ["/static/food1.png", "/static/food2.png"],
-          ["/static/animal1.png", "/static/animal2.png"],
-          ["/static/popculture1.png", "/static/popculture2.png"],
-          ["/static/color1.png", "/static/color2.png"]
+          ["/static/backgrounds/pattern1.png", "/static/backgrounds/pattern2.png", "/static/backgrounds/pattern3.png", "/static/backgrounds/pattern4.png", "/static/backgrounds/pattern5.png"],
+          ["/static/backgrounds/plant1.png", "/static/backgrounds/plant2.png", "/static/backgrounds/plant3.png", "/static/backgrounds/plant4.png", "/static/backgrounds/plant5.png"],
+          ["/static/backgrounds/food1.png", "/static/backgrounds/food2.png", "/static/backgrounds/food3.png", "/static/backgrounds/food4.png"],
+          ["/static/backgrounds/animal1.png", "/static/backgrounds/animal2.png", "/static/backgrounds/animal3.png", "/static/backgrounds/animal4.png"],
+          ["/static/backgrounds/color1.png", "/static/backgrounds/color2.png"]
         ],
       currentSlide: 0,
       orderInfo: {},
@@ -299,7 +298,7 @@ class Customer extends React.Component {
           let temp = data.items.selectedBackgroundArray || []
           if (temp.length === 0) {
             for (let i = 0; i < totalOrders; i++) {
-              temp.push("/static/white.png")
+              temp.push("/static/backgrounds/white.png")
             }
             return temp
           } else {
@@ -328,13 +327,13 @@ class Customer extends React.Component {
     switch (eventType) {
       case "category-prev":
         (this.state.currentCategory === 0) ?
-        this.setState({ currentCategory: 5 })
+        this.setState({ currentCategory: this.state.backgroundCategories.length - 1})
           :
           this.setState({ currentCategory: this.state.currentCategory - 1 })
           break
 
       case "category-next":
-        (this.state.currentCategory === 5) ?
+        (this.state.currentCategory === this.state.backgroundCategories.length - 1) ?
           this.setState({ currentCategory: 0 })
           :
           this.setState({ currentCategory: this.state.currentCategory + 1 })
