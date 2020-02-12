@@ -3,7 +3,7 @@ import Header from '../components/header.js'
 // import Slider from "react-slick"
 import axios from 'axios'
 import Modal from 'react-modal';
-import { CarouselProvider, Slider, Slide, ButtonBack, ButtonNext, DotGroup, WithStore, Dot, Image } from 'pure-react-carousel';
+import { CarouselProvider, Slider, Slide, ButtonBack, ButtonNext, WithStore, Dot, Image } from 'pure-react-carousel';
 const flatten = require("lodash.flatten")
 
 Modal.setAppElement("#__next")
@@ -13,8 +13,8 @@ const meta = { title: 'Order Dashboard', description: 'Order Dashboard' }
 function OrderProof(props) {
   const {
     orderInfo, loading, openModal, 
-    selectedBackgroundArray, updateCurrentSlide } = props
-  const orderMap = (!loading && orderInfo.items.proof_created) ? orderInfo.items.line_items.map(function (element, index) {
+    selectedBackgroundArray, updateCurrentSlide, approved } = props
+  const orderMap = (!loading && orderInfo.items.proof_created && !approved) ? orderInfo.items.line_items.map(function (element, index) {
     return (
       <div className="order-proof-item" key={index}>
         <div className="header">{element.product_name}</div>
@@ -38,7 +38,7 @@ function OrderProof(props) {
     )
   }) : (null)
 
-  const renderOrderProof = (!loading) ?
+  const renderOrderProof = (!loading && !approved) ?
   (
     <div className="order-proof">
       <div className="header">
@@ -62,6 +62,45 @@ function OrderProof(props) {
 
   return (
     renderOrderProof
+  )
+}
+
+function OrderSummary (props) {
+  const { approved, loading, orderInfo, selectedBackgroundArray } = props
+  const orderMap = (!loading && orderInfo.items.proof_created && approved) ? orderInfo.items.line_items.map(function (element, index) {
+    return (
+      <div className="order-proof-item" key={index}>
+        <div className="header">{element.product_name}</div>
+        <div className="original-image">
+          <a href={orderInfo.items.line_items[index].customerImages[0]} target="_blank">Original Image</a>
+        </div>
+        <div className="wrapper">
+          <img src={selectedBackgroundArray[index]} className="bg-image"></img>
+          <div className="other-images">
+            <img src={element.artworkURL} />
+          </div>
+        </div>
+      </div>
+    )
+  }) : (null)
+  const renderOrderSummary = (approved) ? (
+    <div className="order-summary">
+      <div className="fulfillment-header">
+        <div className="checkmark">
+          <i className="far fa-check-circle"></i>
+        </div>
+        <div className="message">
+          We are fulfilling your order!
+        </div>
+      </div>
+      <div>
+        {orderMap}
+      </div>
+    </div>
+  ) :
+  (null)
+  return (
+    renderOrderSummary
   )
 }
 
@@ -214,8 +253,6 @@ class Customer extends React.Component {
   }
   constructor(props) {
     super(props)
-    // this.handleChange = this.handleChange.bind(this)
-    this.slider = React.createRef()
     this.state = {
       loading: true,
       backgroundCategories: ["Color Pattern", "Plants", "Food", "Animals", "Pop Culture", "Solid colors"],
@@ -238,6 +275,7 @@ class Customer extends React.Component {
       currentLineItem: 0,
       selectedBackgroundArray: [],
       slideIndex: 0,
+      approved: false
     }
     this.handleSubmit = this.handleSubmit.bind(this)
     this.openModal = this.openModal.bind(this);
@@ -257,15 +295,23 @@ class Customer extends React.Component {
         const totalOrders = data.items.line_items.reduce(function (accumulator, currentValue) {
           return accumulator + currentValue.quantity
         }, 0)
-        const selectedBackgroundArray = this.state.selectedBackgroundArray
-        for (let i = 0; i < totalOrders; i++) {
-          selectedBackgroundArray.push("/static/white.png")
-        }
+        const selectedBackgroundArray = (function() {
+          let temp = data.items.selectedBackgroundArray || []
+          if (temp.length === 0) {
+            for (let i = 0; i < totalOrders; i++) {
+              temp.push("/static/white.png")
+            }
+            return temp
+          } else {
+            return temp
+          }
+          })()
         this.setState({
           orderInfo: data,
           totalOrders,
           loading: false,
-          selectedBackgroundArray
+          selectedBackgroundArray,
+          approved: data.items.approved
         })
       } else {
         this.setState({ message: `Couldn't fetch order ${this.props.order_id}` })
@@ -320,9 +366,11 @@ class Customer extends React.Component {
   async approveOrder() {
     const { data } = await axios.post(
       `/api/approveorder?order_id=${this.props.order_id}`,
-    { selectedBackgroundArray: this.state.selectedBackgroundArray}
+    { selectedBackgroundArray: this.state.selectedBackgroundArray, order_number: this.state.orderInfo.items.order_number }
     )
-    console.log(data)
+    if(data.success) {
+      this.getOrderInfo()
+    }
   }
   
   render() {
@@ -349,6 +397,13 @@ class Customer extends React.Component {
                 selectedBackgroundArray={this.state.selectedBackgroundArray}
                 updateCurrentSlide={this.updateCurrentSlide.bind(this)}
                 approveOrder={this.approveOrder.bind(this)}
+                approved={this.state.approved}
+              />
+              <OrderSummary
+                approved={this.state.approved}
+                loading={this.state.loading}
+                orderInfo={this.state.orderInfo}
+                selectedBackgroundArray={this.state.selectedBackgroundArray}
               />
               <Modal
                 isOpen={this.state.modalIsOpen}
@@ -364,7 +419,7 @@ class Customer extends React.Component {
                 />
               </Modal>
               <PreloadImages
-              backgroundsArray={this.state.backgroundsArray}
+                backgroundsArray={this.state.backgroundsArray}
               />
             </div>
           </div>

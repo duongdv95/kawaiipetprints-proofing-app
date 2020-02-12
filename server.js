@@ -8,14 +8,15 @@ const server  = express()
 const axios   = require('axios')
 const bodyParser = require('body-parser')
 const { SHOPIFYAPIKEY, SHOPIFYPASSWORD } = require("./secrets.json")
-const { upload, deleteImages }          = require("./file-upload")
+const { upload, deleteImages }          = require("./services/file-upload")
 const proofUpload      = upload.single("image")
 const { cloudFront }   = require('./awsconfig.js')
 var jsonParser = bodyParser.json()
 var urlencodedParser = bodyParser.urlencoded({ extended: false })
-const dynamodb = require("./dynamodb.js")
+const dynamodb = require("./services/dynamodb.js")
+const { sendEmail } = require("./services/email")
 const queryString = require("query-string");
-
+const nodemailer = require('nodemailer')
 if(!dev) {
     server.use('/_next', express.static(path.join(__dirname, '.next')))
 }
@@ -64,10 +65,11 @@ if(dev) {
 
         server.post("/api/approveorder", jsonParser, async (req, res) => {
             const { order_id } = req.query
-            const { selectedBackgroundArray } = req.body 
+            const { selectedBackgroundArray, order_number } = req.body 
             const response = await dynamodb.approveOrder({ order_id, data: { selectedBackgroundArray } })
             console.log(response)
             if(response.success) {
+                sendEmail({ order_id, order_number })
                 res.status(200).json(response)
             } else {
                 res.status(400).json(response)

@@ -1,7 +1,7 @@
 const aws              = require("aws-sdk")
 const multer           = require("multer")
 const multerS3         = require("multer-s3")
-const awsconfig        = require("./awsconfig")
+const awsconfig        = require("../awsconfig")
 aws.config.update(awsconfig)
 
 const s3 = new aws.S3();

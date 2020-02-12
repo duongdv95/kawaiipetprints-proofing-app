@@ -1,5 +1,5 @@
 const AWS = require('aws-sdk');
-const awsconfig = require("./awsconfig")
+const awsconfig = require("../awsconfig")
 AWS.config.update(awsconfig)
 const docClient = new AWS.DynamoDB.DocumentClient()
 const table = "kawaiipetprints"
@@ -126,9 +126,9 @@ async function approveOrder({ order_id, data}) {
     }
     const response = await docClient.update(params).promise()
     if(response.Attributes) {
-        return {success: true, message: `Fixture: ${order_id} approved.`, selectedBackgroundArray}
+        return {success: true, message: `Order ID ${order_id} art approved.`, selectedBackgroundArray}
     } else {
-        return {success: false, message: `Error. Order: ${order_id} could not be approved.`}
+        return {success: false, message: `Error. Order ID ${order_id} could not be approved.`}
     }
 }
 
