@@ -107,8 +107,14 @@ function OrderSummary (props) {
 class ChangeCategory extends React.Component {
   render() {
     const { handleSubmit, updateCurrentSlide } = this.props
+    function handleChange(event) {
+      updateCurrentSlide(0)
+  }
     return (
       <div id="change-category">
+        <select onChange={handleChange} name="change-category">
+          <option value="">{}</option>
+        </select>
         <button onClick={(event) => {
           this.props.carouselStore.setStoreState({currentSlide: 0})
           updateCurrentSlide(0)
@@ -154,15 +160,14 @@ class Carousel extends React.Component {
   render() {
     const style = {width: "100%"}
     const { 
-      backgroundCategories, 
-      currentCategory,
+      currentCategoryIndex,
       currentLineItem,
       handleSubmit,
       backgroundsArray,
       updateCurrentSlide
     } = this.props
 
-    const backgroundsMap = backgroundsArray[currentCategory].map((element, index)=>{
+    const backgroundsMap = backgroundsArray[currentCategoryIndex].options.map((element, index)=>{
       return (
         <Slide key={index} index={index}>
           <Image src={element} style={style}/>
@@ -187,7 +192,7 @@ class Carousel extends React.Component {
       totalSlides: backgroundsMap.length
     }))
 
-    const dotMap = backgroundsArray[currentCategory].map((element, index) => {
+    const dotMap = backgroundsArray[currentCategoryIndex].options.map((element, index) => {
       return (
         <Dot 
         key={index}
@@ -198,7 +203,7 @@ class Carousel extends React.Component {
     })
     return (
       <div id="carousel">
-        <div className="header">{backgroundCategories[currentCategory]}</div>
+        <div className="header">{backgroundsArray[currentCategoryIndex].category}</div>
         <CarouselProvider
           naturalSlideWidth={120}
           naturalSlideHeight={100}
@@ -234,7 +239,9 @@ class Carousel extends React.Component {
 }
 
 function PreloadImages (props) {
-  const imagesArray = flatten(props.backgroundsArray)
+  const imagesArray = flatten(props.backgroundsArray.map((element)=>{
+    return element.options
+  }))
   const imagesMap = imagesArray.map(function(element, index){
     return (
       <img key={index} src={element} style={{display: "none"}}/>
@@ -255,15 +262,14 @@ class Customer extends React.Component {
     super(props)
     this.state = {
       loading: true,
-      backgroundCategories: ["Color Pattern", "Plants", "Food", "Animals", "Solid colors"],
-      currentCategory: 0,
+      currentCategoryIndex: 0,
       backgroundsArray:
         [
-          ["/static/backgrounds/pattern1.png", "/static/backgrounds/pattern2.png", "/static/backgrounds/pattern3.png", "/static/backgrounds/pattern4.png", "/static/backgrounds/pattern5.png"],
-          ["/static/backgrounds/plant1.png", "/static/backgrounds/plant2.png", "/static/backgrounds/plant3.png", "/static/backgrounds/plant4.png", "/static/backgrounds/plant5.png"],
-          ["/static/backgrounds/food1.png", "/static/backgrounds/food2.png", "/static/backgrounds/food3.png", "/static/backgrounds/food4.png"],
-          ["/static/backgrounds/animal1.png", "/static/backgrounds/animal2.png", "/static/backgrounds/animal3.png", "/static/backgrounds/animal4.png"],
-          ["/static/backgrounds/color1.png", "/static/backgrounds/color2.png"]
+          { category: "Color Pattern", options: ["/static/backgrounds/pattern1.png", "/static/backgrounds/pattern2.png", "/static/backgrounds/pattern3.png", "/static/backgrounds/pattern4.png", "/static/backgrounds/pattern5.png"] },
+          { category: "Plants", options: ["/static/backgrounds/plant1.png", "/static/backgrounds/plant2.png", "/static/backgrounds/plant3.png", "/static/backgrounds/plant4.png", "/static/backgrounds/plant5.png"] },
+          { category: "Food", options: ["/static/backgrounds/food1.png", "/static/backgrounds/food2.png", "/static/backgrounds/food3.png", "/static/backgrounds/food4.png"] },
+          { category: "Animals", options: ["/static/backgrounds/animal1.png", "/static/backgrounds/animal2.png", "/static/backgrounds/animal3.png", "/static/backgrounds/animal4.png"] },
+          { category: "Solid Colors", options: ["/static/backgrounds/color1.png", "/static/backgrounds/color2.png"] },
         ],
       currentSlide: 0,
       orderInfo: {},
@@ -277,6 +283,7 @@ class Customer extends React.Component {
       approved: false
     }
     this.handleSubmit = this.handleSubmit.bind(this)
+    this.handleChange = this.handleChange.bind(this)
     this.openModal = this.openModal.bind(this);
     this.closeModal = this.closeModal.bind(this);
   }
@@ -321,27 +328,36 @@ class Customer extends React.Component {
     }
   }
 
+  handleChange(event) {
+    event.preventDefault()
+    const eventType = event.target.name
+    switch (eventType) {
+      case "change-category":
+        this.setState({ currentCategoryIndex })
+    }
+  }
+
   handleSubmit(event) {
     event.preventDefault()
     const eventType = event.target.name
     switch (eventType) {
       case "category-prev":
-        (this.state.currentCategory === 0) ?
-        this.setState({ currentCategory: this.state.backgroundCategories.length - 1})
+        (this.state.currentCategoryIndex === 0) ?
+        this.setState({ currentCategoryIndex: this.state.backgroundsArray.length - 1})
           :
-          this.setState({ currentCategory: this.state.currentCategory - 1 })
+          this.setState({ currentCategoryIndex: this.state.currentCategoryIndex - 1 })
           break
 
       case "category-next":
-        (this.state.currentCategory === this.state.backgroundCategories.length - 1) ?
-          this.setState({ currentCategory: 0 })
+        (this.state.currentCategoryIndex === this.state.backgroundsArray.length - 1) ?
+          this.setState({ currentCategoryIndex: 0 })
           :
-          this.setState({ currentCategory: this.state.currentCategory + 1 })
+          this.setState({ currentCategoryIndex: this.state.currentCategoryIndex + 1 })
         break
       case "select-bg":
         const currentLineItem = event.target.dataset.currentlineitem
-        const { selectedBackgroundArray, backgroundsArray, currentCategory, currentSlide } = this.state
-        selectedBackgroundArray[currentLineItem] = backgroundsArray[currentCategory][currentSlide]
+        const { selectedBackgroundArray, backgroundsArray, currentCategoryIndex, currentSlide } = this.state
+        selectedBackgroundArray[currentLineItem] = backgroundsArray[currentCategoryIndex].options[currentSlide]
         this.closeModal()
         this.setState({ selectedBackgroundArray })
         break
@@ -386,9 +402,8 @@ class Customer extends React.Component {
           <div className="main">
             <div className="content-wrap">
               <OrderProof
-                backgroundCategories={this.state.backgroundCategories}
                 currentSlide={this.state.currentSlide}
-                backgroundsArray={this.state.backgroundsArray[this.state.currentCategory]}
+                backgroundsArray={this.state.backgroundsArray[this.state.currentCategoryIndex]}
                 handleSubmit={this.handleSubmit}
                 orderInfo={this.state.orderInfo}
                 loading={this.state.loading}
@@ -410,9 +425,9 @@ class Customer extends React.Component {
               >
                 <Carousel
                   backgroundsArray={this.state.backgroundsArray}
-                  currentCategory={this.state.currentCategory}
-                  backgroundCategories={this.state.backgroundCategories}
+                  currentCategoryIndex={this.state.currentCategoryIndex}
                   handleSubmit={this.handleSubmit}
+                  handleChange={this.handleChange}
                   currentLineItem={this.state.currentLineItem}
                   updateCurrentSlide={this.updateCurrentSlide.bind(this)}
                 />
