@@ -106,25 +106,22 @@ function OrderSummary (props) {
 
 class ChangeCategory extends React.Component {
   render() {
-    const { handleSubmit, updateCurrentSlide } = this.props
-    function handleChange(event) {
-      updateCurrentSlide(0)
-  }
+    const { updateCurrentSlide, backgroundsArray, handleChange, currentCategoryIndex } = this.props
     return (
       <div id="change-category">
-        <select onChange={handleChange} name="change-category">
-          <option value="">{}</option>
+        <select value={currentCategoryIndex} onChange={(event) => {
+          this.props.carouselStore.setStoreState({currentSlide: 0})
+          updateCurrentSlide(0)
+          handleChange(event)
+        }} name="change-category">
+          { backgroundsArray.map((element, index) => {
+            return (
+              <option value={index} key={index}>
+                { element.category }
+              </option>
+            )
+          }) }
         </select>
-        <button onClick={(event) => {
-          this.props.carouselStore.setStoreState({currentSlide: 0})
-          updateCurrentSlide(0)
-          handleSubmit(event)
-        }} name="category-prev" type="submit">Previous Category</button>
-        <button onClick={(event) => {
-          this.props.carouselStore.setStoreState({currentSlide: 0})
-          updateCurrentSlide(0)
-          handleSubmit(event)
-        }} name="category-next" type="submit">Next Category</button>
       </div>
     )
   }
@@ -163,8 +160,9 @@ class Carousel extends React.Component {
       currentCategoryIndex,
       currentLineItem,
       handleSubmit,
+      handleChange,
       backgroundsArray,
-      updateCurrentSlide
+      updateCurrentSlide,
     } = this.props
 
     const backgroundsMap = backgroundsArray[currentCategoryIndex].options.map((element, index)=>{
@@ -178,7 +176,10 @@ class Carousel extends React.Component {
     const CarouselChangeCategory = WithStore(ChangeCategory, (state) => ({
       currentSlide: state.currentSlide, 
       handleSubmit,
-      updateCurrentSlide 
+      updateCurrentSlide,
+      backgroundsArray,
+      handleChange,
+      currentCategoryIndex
     }))
 
     const EnhancedBackButton = WithStore(BackButton, (state) => ({
@@ -203,7 +204,6 @@ class Carousel extends React.Component {
     })
     return (
       <div id="carousel">
-        <div className="header">{backgroundsArray[currentCategoryIndex].category}</div>
         <CarouselProvider
           naturalSlideWidth={120}
           naturalSlideHeight={100}
@@ -284,6 +284,8 @@ class Customer extends React.Component {
     }
     this.handleSubmit = this.handleSubmit.bind(this)
     this.handleChange = this.handleChange.bind(this)
+    this.updateCurrentSlide = this.updateCurrentSlide.bind(this)
+    this.approveOrder = this.approveOrder.bind(this)
     this.openModal = this.openModal.bind(this);
     this.closeModal = this.closeModal.bind(this);
   }
@@ -333,7 +335,7 @@ class Customer extends React.Component {
     const eventType = event.target.name
     switch (eventType) {
       case "change-category":
-        this.setState({ currentCategoryIndex })
+        this.setState({ currentCategoryIndex: event.target.value })
     }
   }
 
@@ -341,19 +343,6 @@ class Customer extends React.Component {
     event.preventDefault()
     const eventType = event.target.name
     switch (eventType) {
-      case "category-prev":
-        (this.state.currentCategoryIndex === 0) ?
-        this.setState({ currentCategoryIndex: this.state.backgroundsArray.length - 1})
-          :
-          this.setState({ currentCategoryIndex: this.state.currentCategoryIndex - 1 })
-          break
-
-      case "category-next":
-        (this.state.currentCategoryIndex === this.state.backgroundsArray.length - 1) ?
-          this.setState({ currentCategoryIndex: 0 })
-          :
-          this.setState({ currentCategoryIndex: this.state.currentCategoryIndex + 1 })
-        break
       case "select-bg":
         const currentLineItem = event.target.dataset.currentlineitem
         const { selectedBackgroundArray, backgroundsArray, currentCategoryIndex, currentSlide } = this.state
@@ -409,8 +398,8 @@ class Customer extends React.Component {
                 loading={this.state.loading}
                 openModal={this.openModal}
                 selectedBackgroundArray={this.state.selectedBackgroundArray}
-                updateCurrentSlide={this.updateCurrentSlide.bind(this)}
-                approveOrder={this.approveOrder.bind(this)}
+                updateCurrentSlide={this.updateCurrentSlide}
+                approveOrder={this.approveOrder}
                 approved={this.state.approved}
               />
               <OrderSummary
@@ -429,7 +418,7 @@ class Customer extends React.Component {
                   handleSubmit={this.handleSubmit}
                   handleChange={this.handleChange}
                   currentLineItem={this.state.currentLineItem}
-                  updateCurrentSlide={this.updateCurrentSlide.bind(this)}
+                  updateCurrentSlide={this.updateCurrentSlide}
                 />
               </Modal>
               <PreloadImages
