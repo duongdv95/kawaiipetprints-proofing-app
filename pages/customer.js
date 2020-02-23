@@ -13,7 +13,7 @@ const meta = { title: 'Order Dashboard', description: 'Order Dashboard' }
 function OrderProof(props) {
   const {
     orderInfo, loading, openModal, 
-    selectedBackgroundArray, updateCurrentSlide, approved } = props
+    selectedBackgroundArray, updateCurrentSlide, approved, proof_created } = props
   const orderMap = (!loading && orderInfo.items.proof_created && !approved) ? orderInfo.items.line_items.map(function (element, index) {
     return (
       <div className="order-proof-item" key={index}>
@@ -38,7 +38,7 @@ function OrderProof(props) {
     )
   }) : (null)
 
-  const renderOrderProof = (!loading && !approved) ?
+  const renderOrderProof = (!loading && proof_created && !approved) ?
   (
     <div className="order-proof">
       <div className="header">
@@ -62,6 +62,51 @@ function OrderProof(props) {
 
   return (
     renderOrderProof
+  )
+}
+
+function AwaitingArt (props ) {
+  const { proof_created, loading, 
+    backgroundsArray, currentCategoryIndex, 
+    handleChange, handleSubmit, currentLineItem, 
+    updateCurrentSlide, isPreview } = props
+
+  const renderOrderSummary = (!proof_created && !loading) ? (
+    <div className="awaiting-art">
+      <div className="header">
+        <div className="pen">
+          <i className="fas fa-pen-fancy"></i>
+        </div>
+        <div className="message">
+          We're working on your art!
+        </div>
+      </div>
+      <div className="preview-carousel">
+        <ul>
+          <li>
+            Sit tight. You'll receive an email once the art is completed 😊
+          </li>
+          <li>
+            Meanwhile, check out the patterns below! 👇
+          </li>
+        </ul>
+        <div>
+        </div>
+        <Carousel
+          backgroundsArray={backgroundsArray}
+          currentCategoryIndex={currentCategoryIndex}
+          handleSubmit={handleSubmit}
+          handleChange={handleChange}
+          currentLineItem={currentLineItem}
+          updateCurrentSlide={updateCurrentSlide}
+          isPreview={isPreview}
+        />
+      </div>
+    </div>
+  ) :
+  (null)
+  return (
+    renderOrderSummary
   )
 }
 
@@ -109,7 +154,7 @@ class ChangeCategory extends React.Component {
     const { updateCurrentSlide, backgroundsArray, handleChange, currentCategoryIndex } = this.props
     return (
       <div id="change-category">
-        <select value={currentCategoryIndex} onChange={(event) => {
+        <select className="select-css" value={currentCategoryIndex} onChange={(event) => {
           this.props.carouselStore.setStoreState({currentSlide: 0})
           updateCurrentSlide(0)
           handleChange(event)
@@ -163,6 +208,7 @@ class Carousel extends React.Component {
       handleChange,
       backgroundsArray,
       updateCurrentSlide,
+      isPreview
     } = this.props
 
     const backgroundsMap = backgroundsArray[currentCategoryIndex].options.map((element, index)=>{
@@ -223,6 +269,10 @@ class Carousel extends React.Component {
             {dotMap}
           </div>
         </CarouselProvider>
+        {(isPreview) ? 
+        (null)
+        : 
+        (
         <div className="choose-bg">
           <button
             data-currentlineitem={currentLineItem}
@@ -233,6 +283,7 @@ class Carousel extends React.Component {
             Select Background
           </button>
         </div>
+        ) }
       </div> 
     )
   }
@@ -280,7 +331,8 @@ class Customer extends React.Component {
       currentLineItem: 0,
       selectedBackgroundArray: [],
       slideIndex: 0,
-      approved: false
+      approved: false,
+      proof_created: false
     }
     this.handleSubmit = this.handleSubmit.bind(this)
     this.handleChange = this.handleChange.bind(this)
@@ -319,7 +371,8 @@ class Customer extends React.Component {
           totalOrders,
           loading: false,
           selectedBackgroundArray,
-          approved: data.items.approved
+          approved: data.items.approved,
+          proof_created: data.items.proof_created
         })
       } else {
         this.setState({ message: `Couldn't fetch order ${this.props.order_id}` })
@@ -368,12 +421,17 @@ class Customer extends React.Component {
   }
 
   async approveOrder() {
-    const { data } = await axios.post(
-      `/api/approveorder?order_id=${this.props.order_id}`,
-    { selectedBackgroundArray: this.state.selectedBackgroundArray, order_number: this.state.orderInfo.items.order_number }
-    )
-    if(data.success) {
-      this.getOrderInfo()
+    let { selectedBackgroundArray, orderInfo } = this.state
+    let confirmBackground = window.confirm('Are you sure you want to approve this order?')
+    if(confirmBackground){
+      const { data } = await axios.post(
+        `/api/approveorder?order_id=${this.props.order_id}`,
+      { selectedBackgroundArray, orderInfo }
+      )
+      if(data.success) {
+        this.getOrderInfo()
+      }
+    } else {
     }
   }
   
@@ -401,12 +459,24 @@ class Customer extends React.Component {
                 updateCurrentSlide={this.updateCurrentSlide}
                 approveOrder={this.approveOrder}
                 approved={this.state.approved}
+                proof_created={this.state.proof_created}
               />
               <OrderSummary
                 approved={this.state.approved}
                 loading={this.state.loading}
                 orderInfo={this.state.orderInfo}
                 selectedBackgroundArray={this.state.selectedBackgroundArray}
+                />
+              <AwaitingArt
+                loading={this.state.loading}
+                proof_created={this.state.proof_created}
+                backgroundsArray={this.state.backgroundsArray}
+                currentCategoryIndex={this.state.currentCategoryIndex}
+                handleSubmit={this.handleSubmit}
+                handleChange={this.handleChange}
+                currentLineItem={this.state.currentLineItem}
+                updateCurrentSlide={this.updateCurrentSlide}
+                isPreview={true}
               />
               <Modal
                 isOpen={this.state.modalIsOpen}

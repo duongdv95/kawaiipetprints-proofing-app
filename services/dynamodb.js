@@ -38,7 +38,7 @@ async function getOrder({ order_id }) {
 async function createOrder({orderData}) {
     const {order_id, order_number, proof_created, email, 
         order_status_url, line_items, fulfilled, created_at, 
-        updated_at, approved_by_customer} = orderData
+        updated_at, approved_by_customer, first_name} = orderData
 
     const params = {
         TableName: table,
@@ -46,6 +46,7 @@ async function createOrder({orderData}) {
           order_id,
           order_number,
           proof_created,
+          first_name,
           email,
           order_status_url,
           line_items,

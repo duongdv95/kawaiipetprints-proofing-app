@@ -65,11 +65,10 @@ if(dev) {
 
         server.post("/api/approveorder", jsonParser, async (req, res) => {
             const { order_id } = req.query
-            const { selectedBackgroundArray, order_number } = req.body 
+            const { selectedBackgroundArray, orderInfo } = req.body 
             const response = await dynamodb.approveOrder({ order_id, data: { selectedBackgroundArray } })
-            console.log(response)
             if(response.success) {
-                sendEmail({ order_id, order_number })
+                sendEmail({ order_id, orderInfo })
                 res.status(200).json(response)
             } else {
                 res.status(400).json(response)
@@ -107,7 +106,7 @@ if(dev) {
                         artworkURL: "temp", customerImages}
                 })
                 return {
-                    proof_created: false, email: element.email, order_number: element.order_number, 
+                    proof_created: false, first_name: element.billing_address.first_name, email: element.email, order_number: element.order_number, 
                     order_id: element.id, order_status_url: element.order_status_url, 
                     line_items: filteredLineItemsArray, created_at: element.created_at, 
                     updated_at: element.updated_at
@@ -128,7 +127,7 @@ if(dev) {
                     // iterate through shopify orders (4 items) check if each other items exist in dynamodb already (5 items)
                     if(!dynamodbIDArrays.has(order_id)) {
                         const orderData = {
-                            order_id, fulfilled: false, proof_created: element.proof_created, 
+                            order_id, first_name: element.first_name, fulfilled: false, proof_created: element.proof_created, 
                             email: element.email, order_number: element.order_number, 
                             order_status_url: element.order_status_url, line_items: element.line_items, 
                             created_at: element.created_at, updated_at: element.updated_at}
